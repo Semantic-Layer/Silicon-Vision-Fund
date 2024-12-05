@@ -135,6 +135,8 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         console2.log("amount 0 k ", amount0Expected);
         console2.log("amount 1 k ", amount1Expected);
 
+        currency1.transfer(address(hook), 100000);
+
         hook.AddLiquidity{value: amount0Expected}(
             key,
             VisionHook.AddLiquidityParams({

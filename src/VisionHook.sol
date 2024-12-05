@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
-
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
@@ -112,7 +111,6 @@ contract VisionHook is BaseHook, LPLock {
         );
         // _mintLPProof(msg.sender, positionManager.nextTokenId());
         IERC20Minimal token = IERC20Minimal(Currency.unwrap(key.currency1));
-
         token.transferFrom(msg.sender, address(this), params.amount1Desired);
 
         (uint256 tokenId,) = positionManager.mint(
@@ -148,6 +146,9 @@ contract VisionHook is BaseHook, LPLock {
     // reference: approvePosmCurrency
     function beforeInitialize(address, PoolKey calldata key, uint160) external override returns (bytes4) {
         address token = Currency.unwrap(key.currency1);
+        // approve permit2
+        IERC20Minimal(token).approve(address(permit2), type(uint256).max);
+
         // approve poolManager
         IERC20Minimal(token).approve(address(poolManager), type(uint256).max);
 
