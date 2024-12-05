@@ -20,15 +20,26 @@ contract VisionHook is BaseHook {
     using PoolIdLibrary for PoolKey;
     using SafeCast for int128;
 
+    uint256 constant LOCK_WINDOW = 1 days;
+    uint256 constant amountThreshold= 0.01 ether;
     IAction public ACTION_CONTRACT;
+    /**
+     * @dev we implement lp locking by having a 1:1 nft mapping between our nft and univ4 lp nft
+     * the uninft is minted to the hook contract itself.
+     * user will be issued an nft that can be used to redeem back the uninft after locking window.
+     */
+    mapping(PoolId poolId => mapping(uint256 nftId => uint256 uniNftId)) nft2UniNFT;
 
-    // @dev threshold of amount0 when adding lidiquity.
-    // only sends prompt when amount 0 >= this threshold
-    uint256 amount0Threshold = 0.01 ether;
 
     event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
 
     error ErrSafeCast();
+    error ExpiredPastDeadline();
+
+    modifier ensure(uint256 deadline) {
+        if (deadline < block.timestamp) revert ExpiredPastDeadline();
+        _;
+    }
 
     constructor(IPoolManager _poolManager, IAction actionContract) BaseHook(_poolManager) {
         ACTION_CONTRACT = actionContract;
@@ -63,10 +74,13 @@ contract VisionHook is BaseHook {
         });
     }
 
+
+
     // -----------------------------------------------
     // NOTE: see IHooks.sol for function documentation
     // -----------------------------------------------
     // It sends prompt only when called by address action contract (to have liquitiy lock)
+    // todo find better ways to implement liquidity lock
     // dev can defines adding liqudity rules on the action contract side
     function beforeAddLiquidity(
         address sender,
@@ -89,7 +103,7 @@ contract VisionHook is BaseHook {
         );
 
         // send prompt when threshold is met
-        if (amount0 >= amount0Threshold) {
+        if (amount0 >= amountThreshold) {
             (uint256 id, address user, bytes memory prompt) = abi.decode(hookData, (uint256, address, bytes));
             _sendPrompt(key.toId(), id, user, params.liquidityDelta, prompt);
         }
@@ -97,9 +111,7 @@ contract VisionHook is BaseHook {
         return BaseHook.beforeAddLiquidity.selector;
     }
 
-    function _sendPrompt(PoolId poolId, uint256 id, address user, int256 liquidity, bytes memory prompt)
-        internal
-    {
+    function _sendPrompt(PoolId poolId, uint256 id, address user, int256 liquidity, bytes memory prompt) internal {
         emit PromptSent(poolId, id, user, liquidity, prompt);
     }
 }

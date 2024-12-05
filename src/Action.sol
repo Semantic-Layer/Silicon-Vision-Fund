@@ -11,6 +11,7 @@ import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol"; // not for production
 import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquidityTestNoChecks.sol"; // not for production;
+import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 /**
  * poolModifyLiquidityTest
  * @title action contract
@@ -18,13 +19,11 @@ import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquid
  */
 
 contract Action is IAction {
-
-
-
     address public immutable TOKEN; // $TOKEN-$ETH
     address public immutable AI_AGENT;
-    PoolId public  POOL_ID;
+    PoolKey public POOL_KEY;
     bytes public SYSTEM_PROMPT;
+    PoolModifyLiquidityTestNoChecks public immutable POOL_MODIFY_LIQUIDITY;
 
     uint256 id = 1;
 
@@ -42,38 +41,15 @@ contract Action is IAction {
         uint256 deadline;
     }
 
-    constructor(
-        address token,
-        PoolId poolId,
-        address aiAgent,
-        bytes memory systemPrompt
-    ) {
+    constructor(PoolModifyLiquidityTestNoChecks poolModifyLiquidity, address token, PoolKey memory poolKey, address aiAgent, bytes memory systemPrompt) {
+        POOL_MODIFY_LIQUIDITY = poolModifyLiquidity;
         TOKEN = token;
-        POOL_ID = poolId;
+        POOL_KEY = poolKey;
         AI_AGENT = aiAgent;
         SYSTEM_PROMPT = systemPrompt;
     }
 
-    modifier ensure(uint256 deadline) {
-        if (deadline < block.timestamp) revert ExpiredPastDeadline();
-        _;
-    }
 
-    /**
-     * user sends prompt msg by adding liqudity with at least 0.01 eth in Action contract. by doing so:
-     * 1. action contract can define its own rules for sending prompt when adding liqudity
-     * 2. it won't affect people's normal interaction with the pool
-     * 3. we can implement the lqiduity lock for users want to send prompt only
-     * @param params AddLiquidityParams
-     * @param prompt user prompt msg
-     */
-    function addLiqudity(IPoolManager.ModifyLiquidityParams calldata params, uint256 deadline,bytes calldata prompt)
-        external
-        ensure(deadline)
-        returns (uint128 liquidity)
-    {
-        bytes memory hookData = abi.encode(POOL_ID, id++, msg.sender, liquidity, prompt);
-    }
 
     function performSwap(address tokenToSell, address tokenToBuy) external override {}
 }
