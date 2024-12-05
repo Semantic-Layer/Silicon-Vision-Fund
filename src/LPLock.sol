@@ -40,7 +40,7 @@ abstract contract LPLock is ERC721, ERC721TokenReceiver {
     }
 
     // call by hook contract
-    function _mintLPProof(address to, PoolId poolId, uint256 uniNFTId) internal {
+    function _mintLPProof(address to, uint256 uniNFTId) internal {
         uint256 tokenId = _nextTokenId++;
         lockTime[uniNFTId] = block.timestamp;
         _safeMint(to, tokenId);

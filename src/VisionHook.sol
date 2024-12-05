@@ -75,7 +75,7 @@ contract VisionHook is BaseHook, LPLock {
         bytes calldata prompt
     ) external {
         bytes memory hookData = abi.encode(msg.sender, prompt);
-        _mintLPProof(msg.sender, key.toId(), positionManager.nextTokenId());
+        _mintLPProof(msg.sender, positionManager.nextTokenId());
         poolModifyLiquidityTest.modifyLiquidity(key, params, hookData);
     }
 
