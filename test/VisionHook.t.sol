@@ -135,8 +135,6 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         console2.log("amount 0 k ", amount0Expected);
         console2.log("amount 1 k ", amount1Expected);
 
-        CurrencyLibrary.transfer(currency1, address(hook), amount1Expected);
-
         hook.AddLiquidity{value: amount0Expected}(
             key,
             VisionHook.AddLiquidityParams({
@@ -160,7 +158,6 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         hook.redeemLP(1);
         vm.warp(block.timestamp + 1 + 1 days);
 
-        // todo the poolModifyLiquidityTest does not mint lp nft
         hook.redeemLP(1);
 
         assertEq(hook.balanceOf(address(this)), 0);
