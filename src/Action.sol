@@ -41,15 +41,19 @@ contract Action is IAction {
         uint256 deadline;
     }
 
-    constructor(PoolModifyLiquidityTestNoChecks poolModifyLiquidity, address token, PoolKey memory poolKey, address aiAgent, bytes memory systemPrompt) {
+    constructor(
+        PoolModifyLiquidityTestNoChecks poolModifyLiquidity,
+        address token,
+        PoolKey memory poolKey,
+        address aiAgent,
+        bytes memory systemPrompt
+    ) {
         POOL_MODIFY_LIQUIDITY = poolModifyLiquidity;
         TOKEN = token;
         POOL_KEY = poolKey;
         AI_AGENT = aiAgent;
         SYSTEM_PROMPT = systemPrompt;
     }
-
-
 
     function performSwap(address tokenToSell, address tokenToBuy) external override {}
 }

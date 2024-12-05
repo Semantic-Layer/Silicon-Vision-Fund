@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// this hook is built based on full range liqudity
 pragma solidity ^0.8.24;
 
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
@@ -15,21 +14,22 @@ import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {IAction} from "./IAction.sol";
 import {SafeCast} from "v4-core/src/libraries/SafeCast.sol";
+import {PositionManager} from "v4-periphery/src/PositionManager.sol";
+import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquidityTestNoChecks.sol"; // not for production; replace it with the actual router in the future.
+import {LPLock} from "./LPLock.sol";
 
-contract VisionHook is BaseHook {
+contract VisionHook is BaseHook, LPLock {
     using PoolIdLibrary for PoolKey;
     using SafeCast for int128;
 
-    uint256 constant LOCK_WINDOW = 1 days;
-    uint256 constant amountThreshold= 0.01 ether;
-    IAction public ACTION_CONTRACT;
-    /**
-     * @dev we implement lp locking by having a 1:1 nft mapping between our nft and univ4 lp nft
-     * the uninft is minted to the hook contract itself.
-     * user will be issued an nft that can be used to redeem back the uninft after locking window.
-     */
-    mapping(PoolId poolId => mapping(uint256 nftId => uint256 uniNftId)) nft2UniNFT;
+    uint256 constant amountThreshold = 0.01 ether;
 
+    ///@dev a unique id used to identity prompt msgs.
+    uitn256 public promptId = 1;
+
+    PositionManager public immutable positionManager;
+
+    PoolModifyLiquidityTestNoChecks public immutable poolModifyLiquidityTest;
 
     event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
 
@@ -41,19 +41,14 @@ contract VisionHook is BaseHook {
         _;
     }
 
-    constructor(IPoolManager _poolManager, IAction actionContract) BaseHook(_poolManager) {
-        ACTION_CONTRACT = actionContract;
+    constructor(
+        PoolManager _poolManager,
+        PoolModifyLiquidityTestNoChecks _poolModifyLiquidityTest,
+        address _positionManager
+    ) BaseHook(_poolManager) LPLock(_positionManager) {
+        poolModifyLiquidityTest = _poolModifyLiquidityTest;
+        positionManager = PositionManager(_positionManager);
     }
-
-    // function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96)
-    //     external
-    //     override
-    //     onlyValidPools(key.hooks)
-    //     returns (bytes4)
-    // {
-    //     poolId = key.toId();
-    //     return this.beforeInitialize.selector;
-    // }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -74,21 +69,28 @@ contract VisionHook is BaseHook {
         });
     }
 
-
+    // to send prompt, user has to add liquidty via this function only
+    function AddLiquidity(
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata params,
+        bytes calldata prompt
+    ) external {
+        bytes memory hookData = abi.encode(promptId++, msg.sender, prompt);
+        _mintLPProof(positionManager.nextTokenId());
+        poolModifyLiquidityTest.modifyLiquidity(key, params, hookData);
+    }
 
     // -----------------------------------------------
     // NOTE: see IHooks.sol for function documentation
     // -----------------------------------------------
-    // It sends prompt only when called by address action contract (to have liquitiy lock)
-    // todo find better ways to implement liquidity lock
-    // dev can defines adding liqudity rules on the action contract side
+
     function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override onlyValidPools(key.hooks) returns (bytes4) {
-        if (hookData.length == 0 || sender != address(ACTION_CONTRACT)) return BaseHook.beforeAddLiquidity.selector;
+        if (hookData.length == 0 || sender != address(this)) return BaseHook.beforeAddLiquidity.selector;
 
         // safecast
         int128 liquidity = int128(params.liquidityDelta);
