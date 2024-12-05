@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IAction} from "./IAction.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
@@ -27,6 +26,7 @@ contract Action {
         if (msg.sender != AI_AGENT) {
             revert OnlyAgent();
         }
+        _;
     }
 
     struct AddLiquidityParams {
@@ -54,7 +54,7 @@ contract Action {
 
     // in this example, we only swap $TOKEN to $ETH and $ETH to $TOKEN.
     // we will add support to swap to other token when the univ4 router is ready.
-    function performSwap(IPoolManager.SwapParams memory params) external override {
+    function performSwap(IPoolManager.SwapParams memory params) external {
         POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
     }
 }

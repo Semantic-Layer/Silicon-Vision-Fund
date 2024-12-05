@@ -12,7 +12,6 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeS
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
-import {IAction} from "./IAction.sol";
 import {SafeCast} from "v4-core/src/libraries/SafeCast.sol";
 import {PositionManager} from "v4-periphery/src/PositionManager.sol";
 import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquidityTestNoChecks.sol"; // not for production; replace it with the actual router in the future.
@@ -25,7 +24,7 @@ contract VisionHook is BaseHook, LPLock {
     uint256 constant amountThreshold = 0.01 ether;
 
     ///@dev a unique id used to identity prompt msgs.
-    uitn256 public promptId = 1;
+    uint256 public promptId = 1;
 
     PositionManager public immutable positionManager;
 
@@ -42,9 +41,9 @@ contract VisionHook is BaseHook, LPLock {
     }
 
     constructor(
-        PoolManager _poolManager,
+        IPoolManager _poolManager,
         PoolModifyLiquidityTestNoChecks _poolModifyLiquidityTest,
-        address _positionManager
+        address payable _positionManager
     ) BaseHook(_poolManager) LPLock(_positionManager) {
         poolModifyLiquidityTest = _poolModifyLiquidityTest;
         positionManager = PositionManager(_positionManager);
@@ -52,7 +51,7 @@ contract VisionHook is BaseHook, LPLock {
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
-            beforeInitialize: true,
+            beforeInitialize: false,
             afterInitialize: false,
             beforeAddLiquidity: true,
             afterAddLiquidity: false,
@@ -76,7 +75,7 @@ contract VisionHook is BaseHook, LPLock {
         bytes calldata prompt
     ) external {
         bytes memory hookData = abi.encode(msg.sender, prompt);
-        _mintLPProof(positionManager.nextTokenId());
+        _mintLPProof(msg.sender, key.toId(), positionManager.nextTokenId());
         poolModifyLiquidityTest.modifyLiquidity(key, params, hookData);
     }
 
@@ -90,7 +89,9 @@ contract VisionHook is BaseHook, LPLock {
         IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override onlyValidPools(key.hooks) returns (bytes4) {
-        if (hookData.length == 0 || sender != address(this)) return BaseHook.beforeAddLiquidity.selector;
+        if (hookData.length == 0 || sender != address(this)) {
+            return BaseHook.beforeAddLiquidity.selector;
+        }
 
         // safecast
         int128 liquidity = int128(params.liquidityDelta);
@@ -116,4 +117,6 @@ contract VisionHook is BaseHook, LPLock {
     function _sendPrompt(PoolId poolId, uint256 id, address user, int256 liquidity, bytes memory prompt) internal {
         emit PromptSent(poolId, id, user, liquidity, prompt);
     }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {}
 }
