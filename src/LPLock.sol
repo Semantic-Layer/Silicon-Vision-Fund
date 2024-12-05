@@ -56,4 +56,8 @@ abstract contract LPLock is ERC721, ERC721TokenReceiver {
         delete lockTime[nft2UniNFT[tokenId]];
         delete nft2UniNFT[tokenId];
     }
+
+    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
+        return ERC721TokenReceiver.onERC721Received.selector;
+    }
 }
