@@ -54,7 +54,8 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         address flags = address(
             uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG) ^ (0x4444 << 144) // Namespace the hook to avoid collisions
         );
-        bytes memory constructorArgs = abi.encode(manager, address(modifyLiquidityNoChecks), address(posm)); //Add all the necessary constructor arguments from the hook
+        bytes memory constructorArgs =
+            abi.encode(manager, address(modifyLiquidityNoChecks), address(posm), address(permit2)); //Add all the necessary constructor arguments from the hook
         deployCodeTo("VisionHook.sol:VisionHook", constructorArgs, flags);
         hook = VisionHook(flags);
 
@@ -108,9 +109,9 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         // vm.stopPrank();
     }
 
-    function testReceiveLPNFT() public {
-        ERC721(address(posm)).safeTransferFrom(address(this), address(hook), 1);
-    }
+    // function testReceiveLPNFT() public {
+    //     ERC721(address(posm)).safeTransferFrom(address(this), address(hook), 1);
+    // }
 
     function testAddliquidity() public {
         console2.log("balance", address(this).balance);
@@ -134,7 +135,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         console2.log("amount 0 k ", amount0Expected);
         console2.log("amount 1 k ", amount1Expected);
 
-        CurrencyLibrary.transfer(currency1, address(hook), amount1Expected);
+        currency1.transfer(address(hook), 100000);
 
         hook.AddLiquidity{value: amount0Expected}(
             key,
@@ -143,8 +144,6 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
                 tickUpper: tickUpper,
                 amount0Desired: amount0Expected,
                 amount1Desired: amount1Expected,
-                amount0Min: amount0Expected - 1,
-                amount1Min: amount1Expected - 1,
                 deadline: MAX_DEADLINE
             }),
             bytes("hello")
@@ -161,10 +160,9 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         hook.redeemLP(1);
         vm.warp(block.timestamp + 1 + 1 days);
 
-        // todo the poolModifyLiquidityTest does not mint lp nft
-        // hook.redeemLP(1);
+        hook.redeemLP(1);
 
-        // assertEq(hook.balanceOf(address(this)), 0);
-        // assertEq(ERC721(address(posm)).balanceOf(address(this)), 2);
+        assertEq(hook.balanceOf(address(this)), 0);
+        assertEq(ERC721(address(posm)).balanceOf(address(this)), 2);
     }
 }

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
-
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
@@ -19,9 +18,12 @@ import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquid
 import {LPLock} from "./LPLock.sol";
 import {IERC20Minimal} from "v4-core/src/interfaces/external/IERC20Minimal.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
+import {EasyPosm} from "../test/utils/EasyPosm.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 
 contract VisionHook is BaseHook, LPLock {
     using PoolIdLibrary for PoolKey;
+    using EasyPosm for PositionManager;
     using SafeCast for int128;
     using SafeCast for int256;
     using SafeCast for uint256;
@@ -34,6 +36,8 @@ contract VisionHook is BaseHook, LPLock {
     uint256 public promptId = 1;
 
     PositionManager public immutable positionManager;
+
+    IAllowanceTransfer public immutable permit2;
 
     PoolModifyLiquidityTestNoChecks public immutable poolModifyLiquidityTest;
 
@@ -51,10 +55,12 @@ contract VisionHook is BaseHook, LPLock {
     constructor(
         IPoolManager _poolManager,
         PoolModifyLiquidityTestNoChecks _poolModifyLiquidityTest,
-        address payable _positionManager
+        address payable _positionManager,
+        address _permit2
     ) BaseHook(_poolManager) LPLock(_positionManager) {
         poolModifyLiquidityTest = _poolModifyLiquidityTest;
         positionManager = PositionManager(_positionManager);
+        permit2 = IAllowanceTransfer(_permit2);
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -81,8 +87,6 @@ contract VisionHook is BaseHook, LPLock {
         int24 tickUpper;
         uint256 amount0Desired;
         uint256 amount1Desired;
-        uint256 amount0Min;
-        uint256 amount1Min;
         uint256 deadline;
     }
 
@@ -93,7 +97,9 @@ contract VisionHook is BaseHook, LPLock {
         ensure(params.deadline)
         returns (uint128 liquidity)
     {
-        _mintLPProof(msg.sender, positionManager.nextTokenId());
+        uint256 amount0Before = key.currency0.balanceOfSelf() - msg.value;
+        uint256 amount1Before = key.currency1.balanceOfSelf();
+
         bytes memory hookData = abi.encode(msg.sender, prompt);
         (uint160 sqrtPriceX96,,,) = poolManager.getSlot0(key.toId());
         liquidity = LiquidityAmounts.getLiquidityForAmounts(
@@ -105,35 +111,31 @@ contract VisionHook is BaseHook, LPLock {
         );
         // _mintLPProof(msg.sender, positionManager.nextTokenId());
         IERC20Minimal token = IERC20Minimal(Currency.unwrap(key.currency1));
-
         token.transferFrom(msg.sender, address(this), params.amount1Desired);
 
-        // todo poolModifyLiquidityTest.modifyLiquidity does not mint lp nft. need to call positionManager
-        BalanceDelta addedDelta = poolModifyLiquidityTest.modifyLiquidity{value: params.amount0Desired}(
+        (uint256 tokenId,) = positionManager.mint(
             key,
-            IPoolManager.ModifyLiquidityParams({
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: (uint256(liquidity)).toInt256(),
-                salt: 0
-            }),
+            params.tickLower,
+            params.tickUpper,
+            liquidity,
+            params.amount0Desired,
+            params.amount1Desired,
+            address(this),
+            block.timestamp,
             hookData
         );
-
-        uint256 amount0 = uint128(-addedDelta.amount0());
-        uint256 amount1 = uint128(-addedDelta.amount1());
-        if (amount0 < params.amount0Min || amount1 < params.amount1Min) {
-            revert TooMuchSlippage();
-        }
+        _mintLPProof(msg.sender, tokenId);
 
         // transfer back excess amount
+        uint256 amount0After = key.currency0.balanceOfSelf();
+        uint256 amount1After = key.currency1.balanceOfSelf();
 
-        if (amount0 < params.amount0Desired) {
-            key.currency0.transfer(msg.sender, params.amount0Desired - amount0);
+        if (amount0After > amount0Before) {
+            key.currency0.transfer(msg.sender, amount0After - amount0Before);
         }
 
-        if (amount1 < params.amount1Desired) {
-            key.currency0.transfer(msg.sender, params.amount1Desired - amount1);
+        if (amount1After > amount1Before) {
+            key.currency0.transfer(msg.sender, amount1After - amount1Before);
         }
     }
 
@@ -141,10 +143,19 @@ contract VisionHook is BaseHook, LPLock {
     // NOTE: see IHooks.sol for function documentation
     // -----------------------------------------------
 
+    // reference: approvePosmCurrency
     function beforeInitialize(address, PoolKey calldata key, uint160) external override returns (bytes4) {
         address token = Currency.unwrap(key.currency1);
-        // approve
-        IERC20Minimal(token).approve(address(poolModifyLiquidityTest), type(uint256).max);
+        // approve permit2
+        IERC20Minimal(token).approve(address(permit2), type(uint256).max);
+
+        // approve poolManager
+        IERC20Minimal(token).approve(address(poolManager), type(uint256).max);
+
+        // approve positionManager
+        // Because positionManager uses permit2, we must execute 2 permits/approvals.
+        IERC20Minimal(token).approve(address(positionManager), type(uint256).max);
+        permit2.approve(token, address(positionManager), type(uint160).max, type(uint48).max);
         return BaseHook.beforeInitialize.selector;
     }
 
