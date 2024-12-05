@@ -20,7 +20,7 @@ abstract contract LPLock is ERC721, ERC721TokenReceiver {
     ///@dev univ4 nft address. aka the positionManager address
     ERC721 public immutable uniNFT;
 
-    uint256 private _nextTokenId;
+    uint256 private _nextTokenId = 1;
 
     ///@dev map between our own nft and univ4 lp nft
     mapping(uint256 nftId => uint256 uniNftId) public nft2UniNFT;
@@ -55,9 +55,5 @@ abstract contract LPLock is ERC721, ERC721TokenReceiver {
 
         delete lockTime[nft2UniNFT[tokenId]];
         delete nft2UniNFT[tokenId];
-    }
-
-    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
-        return ERC721TokenReceiver.onERC721Received.selector;
     }
 }
