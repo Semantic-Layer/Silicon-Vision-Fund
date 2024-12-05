@@ -14,7 +14,7 @@ import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
 import {VisionHook} from "../src/VisionHook.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
-
+import {SafeCast} from "v4-core/src/libraries/SafeCast.sol";
 import {LiquidityAmounts} from "v4-core/test/utils/LiquidityAmounts.sol";
 import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
 import {EasyPosm} from "./utils/EasyPosm.sol";
@@ -22,7 +22,8 @@ import {Fixtures} from "./utils/Fixtures.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {ERC721, ERC721TokenReceiver} from "solmate/src/tokens/ERC721.sol";
 
-contract VisionHookTest is Test, Fixtures {
+contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
+    using SafeCast for uint256;
     using EasyPosm for IPositionManager;
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -93,6 +94,17 @@ contract VisionHookTest is Test, Fixtures {
             ZERO_BYTES
         );
 
+        // BalanceDelta addedDelta = modifyLiquidityNoChecks.modifyLiquidity{value: amount0Expected+1}(
+        //     key,
+        //     IPoolManager.ModifyLiquidityParams({
+        //         tickLower: tickLower,
+        //         tickUpper: tickUpper,
+        //         liquidityDelta: (uint256(liquidityAmount)).toInt256(),
+        //         salt: 0
+        //     }),
+        //     ""
+        // );
+
         // vm.stopPrank();
     }
 
@@ -110,7 +122,7 @@ contract VisionHookTest is Test, Fixtures {
 
         uint128 liquidityAmount = 1e18;
 
-        uint256 beforeNFTbalanace = hook.balanceOf(msg.sender);
+        uint256 beforeNFTbalanace = hook.balanceOf(address(this));
 
         (uint256 amount0Expected, uint256 amount1Expected) = LiquidityAmounts.getAmountsForLiquidity(
             SQRT_PRICE_1_1,
@@ -119,8 +131,8 @@ contract VisionHookTest is Test, Fixtures {
             liquidityAmount
         );
 
-        console2.log("amount 0 ", amount0Expected);
-        console2.log("amount 1 ", amount1Expected);
+        console2.log("amount 0 k ", amount0Expected);
+        console2.log("amount 1 k ", amount1Expected);
 
         CurrencyLibrary.transfer(currency1, address(hook), amount1Expected);
 
@@ -139,7 +151,20 @@ contract VisionHookTest is Test, Fixtures {
         );
 
         // check nft balance
-        uint256 afterNFTbalanace = hook.balanceOf(msg.sender);
+        uint256 afterNFTbalanace = hook.balanceOf(address(this));
 
+        assertEq(afterNFTbalanace - beforeNFTbalanace, 1);
+
+        assertEq(ERC721(address(posm)).balanceOf(address(hook)), 1);
+
+        vm.expectRevert();
+        hook.redeemLP(1);
+        vm.warp(block.timestamp + 1 + 1 days);
+
+        // todo the poolModifyLiquidityTest does not mint lp nft
+        // hook.redeemLP(1);
+
+        // assertEq(hook.balanceOf(address(this)), 0);
+        // assertEq(ERC721(address(posm)).balanceOf(address(this)), 2);
     }
 }

@@ -93,6 +93,7 @@ contract VisionHook is BaseHook, LPLock {
         ensure(params.deadline)
         returns (uint128 liquidity)
     {
+        _mintLPProof(msg.sender, positionManager.nextTokenId());
         bytes memory hookData = abi.encode(msg.sender, prompt);
         (uint160 sqrtPriceX96,,,) = poolManager.getSlot0(key.toId());
         liquidity = LiquidityAmounts.getLiquidityForAmounts(
@@ -107,6 +108,7 @@ contract VisionHook is BaseHook, LPLock {
 
         token.transferFrom(msg.sender, address(this), params.amount1Desired);
 
+        // todo poolModifyLiquidityTest.modifyLiquidity does not mint lp nft. need to call positionManager
         BalanceDelta addedDelta = poolModifyLiquidityTest.modifyLiquidity{value: params.amount0Desired}(
             key,
             IPoolManager.ModifyLiquidityParams({
@@ -124,15 +126,15 @@ contract VisionHook is BaseHook, LPLock {
             revert TooMuchSlippage();
         }
 
-        // // transfer back excess amount
+        // transfer back excess amount
 
-        // if (amount0 < params.amount0Desired) {
-        //     key.currency0.transfer(msg.sender, params.amount0Desired - amount0);
-        // }
+        if (amount0 < params.amount0Desired) {
+            key.currency0.transfer(msg.sender, params.amount0Desired - amount0);
+        }
 
-        // if (amount1 < params.amount1Desired) {
-        //     key.currency0.transfer(msg.sender, params.amount1Desired - amount1);
-        // }
+        if (amount1 < params.amount1Desired) {
+            key.currency0.transfer(msg.sender, params.amount1Desired - amount1);
+        }
     }
 
     // -----------------------------------------------
