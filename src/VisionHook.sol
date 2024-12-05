@@ -150,7 +150,7 @@ contract VisionHook is BaseHook, LPLock {
         address token = Currency.unwrap(key.currency1);
         // approve poolManager
         IERC20Minimal(token).approve(address(poolManager), type(uint256).max);
-        
+
         // approve positionManager
         // Because positionManager uses permit2, we must execute 2 permits/approvals.
         IERC20Minimal(token).approve(address(positionManager), type(uint256).max);
