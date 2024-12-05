@@ -5,17 +5,13 @@ import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
-import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
-import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol"; // not for production
-import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquidityTestNoChecks.sol"; // not for production;
-import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
+import {IERC20Minimal} from "v4-core/src/interfaces/external/IERC20Minimal.sol";
 
 ///@dev it's treasury as well as the where ai can perform swap
 contract Action {
     PoolSwapTest public immutable POOL_SWAP;
-    address public immutable TOKEN; // $TOKEN-$ETH
+    address public immutable TOKEN; // $ETH-$TOKEN
     address public immutable AI_AGENT;
     PoolKey public POOL_KEY;
     bytes public SYSTEM_PROMPT;
@@ -41,8 +37,8 @@ contract Action {
     constructor(
         address poolSwapTest,
         address token,
-        PoolKey memory poolKey,
         address aiAgent,
+        PoolKey memory poolKey,
         bytes memory systemPrompt
     ) {
         POOL_SWAP = PoolSwapTest(poolSwapTest);
@@ -54,7 +50,11 @@ contract Action {
 
     // in this example, we only swap $TOKEN to $ETH and $ETH to $TOKEN.
     // we will add support to swap to other token when the univ4 router is ready.
-    function performSwap(IPoolManager.SwapParams memory params) external {
+    function performSwap(IPoolManager.SwapParams memory params) external onlyAgent {
         POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
+    }
+
+    function setERC20Allowances(address token, address to, uint256 amount) external onlyAgent {
+        IERC20Minimal(token).approve(to, amount);
     }
 }
