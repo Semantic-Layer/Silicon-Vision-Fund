@@ -69,13 +69,13 @@ contract VisionHook is BaseHook, LPLock {
         });
     }
 
-    // to send prompt, user has to add liquidty via this function only
+    // to send prompt, user has to add liquidty via this function
     function AddLiquidity(
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata prompt
     ) external {
-        bytes memory hookData = abi.encode(promptId++, msg.sender, prompt);
+        bytes memory hookData = abi.encode(msg.sender, prompt);
         _mintLPProof(positionManager.nextTokenId());
         poolModifyLiquidityTest.modifyLiquidity(key, params, hookData);
     }
@@ -106,8 +106,8 @@ contract VisionHook is BaseHook, LPLock {
 
         // send prompt when threshold is met
         if (amount0 >= amountThreshold) {
-            (uint256 id, address user, bytes memory prompt) = abi.decode(hookData, (uint256, address, bytes));
-            _sendPrompt(key.toId(), id, user, params.liquidityDelta, prompt);
+            (address user, bytes memory prompt) = abi.decode(hookData, (address, bytes));
+            _sendPrompt(key.toId(), promptId++, user, params.liquidityDelta, prompt);
         }
 
         return BaseHook.beforeAddLiquidity.selector;
