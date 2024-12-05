@@ -26,7 +26,7 @@ contract VisionHook is BaseHook {
     // only sends prompt when amount 0 >= this threshold
     uint256 amount0Threshold = 0.01 ether;
 
-    event PromptSent(PoolKey indexed key, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
+    event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
 
     error ErrSafeCast();
 
@@ -66,7 +66,7 @@ contract VisionHook is BaseHook {
     // -----------------------------------------------
     // NOTE: see IHooks.sol for function documentation
     // -----------------------------------------------
-    // It sends prompt only when called by address action contract
+    // It sends prompt only when called by address action contract (to have liquitiy lock)
     // dev can defines adding liqudity rules on the action contract side
     function beforeAddLiquidity(
         address sender,
@@ -74,7 +74,7 @@ contract VisionHook is BaseHook {
         IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override onlyValidPools(key.hooks) returns (bytes4) {
-        if (hookData.length == 0) return BaseHook.beforeAddLiquidity.selector;
+        if (hookData.length == 0 || sender != address(ACTION_CONTRACT)) return BaseHook.beforeAddLiquidity.selector;
 
         // safecast
         int128 liquidity = int128(params.liquidityDelta);
@@ -88,17 +88,18 @@ contract VisionHook is BaseHook {
             liquidity.toUint128()
         );
 
+        // send prompt when threshold is met
         if (amount0 >= amount0Threshold) {
             (uint256 id, address user, bytes memory prompt) = abi.decode(hookData, (uint256, address, bytes));
-            _sendPrompt(key, id, user, params.liquidityDelta, prompt);
+            _sendPrompt(key.toId(), id, user, params.liquidityDelta, prompt);
         }
 
         return BaseHook.beforeAddLiquidity.selector;
     }
 
-    function _sendPrompt(PoolKey calldata key, uint256 id, address user, int256 liquidity, bytes memory prompt)
+    function _sendPrompt(PoolId poolId, uint256 id, address user, int256 liquidity, bytes memory prompt)
         internal
     {
-        emit PromptSent(key, id, user, liquidity, prompt);
+        emit PromptSent(poolId, id, user, liquidity, prompt);
     }
 }
