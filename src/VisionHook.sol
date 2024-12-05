@@ -6,29 +6,23 @@ import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
-import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {CurrencySettler} from "v4-core/test/utils/CurrencySettler.sol";
-import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {SafeCast} from "v4-core/src/libraries/SafeCast.sol";
 import {PositionManager} from "v4-periphery/src/PositionManager.sol";
-import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquidityTestNoChecks.sol"; // not for production; replace it with the actual router in the future.
-import {LPLock} from "./LPLock.sol";
 import {IERC20Minimal} from "v4-core/src/interfaces/external/IERC20Minimal.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
-import {EasyPosm} from "../test/utils/EasyPosm.sol";
+import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+
+import {EasyPosm} from "../test/utils/EasyPosm.sol";
+import {LPLock} from "./LPLock.sol";
 
 contract VisionHook is BaseHook, LPLock {
     using PoolIdLibrary for PoolKey;
     using EasyPosm for PositionManager;
     using SafeCast for int128;
-    using SafeCast for int256;
-    using SafeCast for uint256;
     using StateLibrary for IPoolManager;
-    using CurrencySettler for Currency;
 
     uint256 constant amountThreshold = 0.01 ether;
 
@@ -38,8 +32,6 @@ contract VisionHook is BaseHook, LPLock {
     PositionManager public immutable positionManager;
 
     IAllowanceTransfer public immutable permit2;
-
-    PoolModifyLiquidityTestNoChecks public immutable poolModifyLiquidityTest;
 
     event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
 
@@ -52,13 +44,10 @@ contract VisionHook is BaseHook, LPLock {
         _;
     }
 
-    constructor(
-        IPoolManager _poolManager,
-        PoolModifyLiquidityTestNoChecks _poolModifyLiquidityTest,
-        address payable _positionManager,
-        address _permit2
-    ) BaseHook(_poolManager) LPLock(_positionManager) {
-        poolModifyLiquidityTest = _poolModifyLiquidityTest;
+    constructor(IPoolManager _poolManager, address payable _positionManager, address _permit2)
+        BaseHook(_poolManager)
+        LPLock(_positionManager)
+    {
         positionManager = PositionManager(_positionManager);
         permit2 = IAllowanceTransfer(_permit2);
     }

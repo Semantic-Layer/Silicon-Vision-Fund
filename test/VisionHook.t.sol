@@ -54,8 +54,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         address flags = address(
             uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG) ^ (0x4444 << 144) // Namespace the hook to avoid collisions
         );
-        bytes memory constructorArgs =
-            abi.encode(manager, address(modifyLiquidityNoChecks), address(posm), address(permit2)); //Add all the necessary constructor arguments from the hook
+        bytes memory constructorArgs = abi.encode(manager, address(posm), address(permit2)); //Add all the necessary constructor arguments from the hook
         deployCodeTo("VisionHook.sol:VisionHook", constructorArgs, flags);
         hook = VisionHook(flags);
 
