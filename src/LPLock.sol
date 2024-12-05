@@ -2,9 +2,8 @@
 
 pragma solidity ^0.8.24;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {ERC721, ERC721TokenReceiver} from "solmate/src/tokens/ERC721.sol";
+
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 /**
@@ -14,7 +13,7 @@ import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
  * user will be issued an nft that can be used to redeem back the uninft after locking window.
  */
 
-abstract contract LPLock is ERC721, ERC721Burnable, IERC721Receiver {
+abstract contract LPLock is ERC721, ERC721TokenReceiver {
     ///@dev lp lock window
     uint256 public constant LOCK_WINDOW = 1 days;
 
@@ -50,7 +49,7 @@ abstract contract LPLock is ERC721, ERC721Burnable, IERC721Receiver {
 
     // call by user to redeem lp back
     function redeemLP(uint256 tokenId) public AfterLock(nft2UniNFT[tokenId]) {
-        ERC721Burnable.burn(tokenId);
+        ERC721._burn(tokenId);
 
         uniNFT.safeTransferFrom(address(this), msg.sender, nft2UniNFT[tokenId], "");
 
