@@ -142,7 +142,6 @@ contract VisionHook is BaseHook, LPLock {
     function beforeInitialize(address, PoolKey calldata key, uint160) external override returns (bytes4) {
         address token = Currency.unwrap(key.currency1);
         // approve
-        IERC20Minimal(token).approve(address(positionManager), type(uint256).max);
         IERC20Minimal(token).approve(address(poolModifyLiquidityTest), type(uint256).max);
         return BaseHook.beforeInitialize.selector;
     }
