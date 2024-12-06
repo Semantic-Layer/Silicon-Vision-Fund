@@ -12,8 +12,11 @@ via-ir=true
 sepolia = "${SEPOLIA_RPC_URL}"
 unichian = "${UNICHAIN_RPC_URL}"
 
+
 [etherscan]
 mainnet = { key = "${ETHERSCAN_API_KEY}" }
+unichain = { key = "${ETHERSCAN_API_KEY}", url="https://sepolia.uniscan.xyz" }
+
 
 
 

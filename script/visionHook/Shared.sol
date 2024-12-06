@@ -39,7 +39,7 @@ contract Shared is Script {
         } else if (chainId == UNICHAIN_CHAINID) {
             console2.log("deploying on unichain sepolia");
             poolManager = IPoolManager(0xC81462Fec8B23319F288047f8A03A57682a35C1A);
-            posm = IPositionManager(0xB433cB9BcDF4CfCC5cAB7D34f90d1a7deEfD27b9);
+            posm = IPositionManager(0x8Ec17af533308Cf5BDCC22A0F9E53E61f91B3506);
             swapRouter = PoolSwapTest(0xe437355299114d35Ffcbc0c39e163B24A8E9cBf1);
             permit2 = IAllowanceTransfer(0x000000000022D473030F116dDEE9F6B43aC78BA3);
         } else {
