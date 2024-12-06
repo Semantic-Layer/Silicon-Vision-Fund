@@ -33,6 +33,13 @@ contract Factory is ERC721TokenReceiver {
 
     IAllowanceTransfer public immutable permit2;
 
+
+    // for deployed funds
+    PoolId[] public pools;
+
+    ///@dev pool id => action contract address
+    mapping(PoolId poolId => address action) actions; 
+
     error ZeroValue();
     error ZeroLiquidity();
 
@@ -98,6 +105,9 @@ contract Factory is ERC721TokenReceiver {
                 sqrtPriceX96: params.sqrtPriceX96
             })
         );
+
+        
+        
         address action = _deployAction(
             DeployActionParams({
                 poolSwapTest: poolSwapTest,
@@ -107,6 +117,10 @@ contract Factory is ERC721TokenReceiver {
                 systemPrompt: params.systemPrompt
             })
         );
+
+        PoolId id = key.toId();
+        pools.push(id);
+        actions[id] = action;
 
         token.mint(action);
 
@@ -136,7 +150,21 @@ contract Factory is ERC721TokenReceiver {
             block.timestamp,
             ""
         );
+
+        // return the excess amount of token to msg.msg.sender
+        token.transfer(msg.sender, token.balanceOf(address(this)));
     }
+    ///@dev return the amount of total deployed pools
+    function totalPoolLength() public view returns(uint256) {
+        return pools.length;
+    }
+
+    ///@dev return all pools
+    function AllPools() public view returns (PoolId[] memory) {
+        return pools;
+    }
+
+
 
     function _createPool(CreatPoolParams memory params) internal returns (PoolKey memory key) {
         // create(initialize) a univ4 pool
@@ -144,6 +172,8 @@ contract Factory is ERC721TokenReceiver {
             Currency.wrap(address(0)), Currency.wrap(params.token), params.fee, params.tickSpacing, IHooks(hook)
         );
         poolManager.initialize(key, params.sqrtPriceX96);
+
+        
     }
 
     function _deployAction(DeployActionParams memory params) internal returns (address) {
