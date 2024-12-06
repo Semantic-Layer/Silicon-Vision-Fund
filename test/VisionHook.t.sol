@@ -171,6 +171,17 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
     function testFactory() public {
         factory = new Factory(address(hook), address(swapRouter), posm, manager, permit2);
 
-        
+        Factory.DeployVisionFundParams memory params = Factory.DeployVisionFundParams({
+            fee: 3000,
+            tickSpacing: 60,
+            sqrtPriceX96: SQRT_PRICE_1_1,
+            name: "test token",
+            symbol: "ttoken",
+            decimals: 18,
+            aiAgent: user,
+            systemPrompt: "prompt"
+        });
+
+        factory.deployVisionFund{value: 500 ether}(params);
     }
 }

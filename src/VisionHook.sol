@@ -37,7 +37,9 @@ contract VisionHook is BaseHook, LPLock {
 
     error ErrSafeCast();
     error ExpiredPastDeadline();
-    error TooMuchSlippage();
+    error ZeroLiquidity();
+    error Threshold();
+    error WrongValue();
 
     modifier ensure(uint256 deadline) {
         if (deadline < block.timestamp) revert ExpiredPastDeadline();
@@ -86,6 +88,8 @@ contract VisionHook is BaseHook, LPLock {
         ensure(params.deadline)
         returns (uint128 liquidity)
     {
+        if (msg.value < amountThreshold) revert Threshold();
+        if (msg.value < params.amount0Desired) revert WrongValue();
         uint256 amount0Before = key.currency0.balanceOfSelf() - msg.value;
         uint256 amount1Before = key.currency1.balanceOfSelf();
 
@@ -98,7 +102,8 @@ contract VisionHook is BaseHook, LPLock {
             params.amount0Desired,
             params.amount1Desired
         );
-        // _mintLPProof(msg.sender, positionManager.nextTokenId());
+        if (liquidity == 0) revert ZeroLiquidity();
+
         IERC20Minimal token = IERC20Minimal(Currency.unwrap(key.currency1));
         token.transferFrom(msg.sender, address(this), params.amount1Desired);
 

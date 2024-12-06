@@ -18,13 +18,7 @@ import {EasyPosm} from "../test/utils/EasyPosm.sol";
 
 contract Factory is ERC721TokenReceiver {
     using EasyPosm for IPositionManager;
-    
-    /// @dev Min tick for full range with tick spacing of 60
-    int24 internal constant MIN_TICK = -887220;
-    /// @dev Max tick for full range with tick spacing of 60
-    int24 internal constant MAX_TICK = -MIN_TICK;
 
-    
     ///@dev VisionHook address
 
     address public immutable hook;
@@ -38,6 +32,9 @@ contract Factory is ERC721TokenReceiver {
     IPositionManager public immutable positionManager;
 
     IAllowanceTransfer public immutable permit2;
+
+    error ZeroValue();
+    error ZeroLiquidity();
 
     constructor(
         address _hook,
@@ -89,6 +86,7 @@ contract Factory is ERC721TokenReceiver {
     }
 
     function deployVisionFund(DeployVisionFundParams calldata params) external payable {
+        if (msg.value == 0) revert ZeroValue();
         Token token =
             _deployToken(DeployTokenParams({name: params.name, symbol: params.symbol, decimals: params.decimals}));
 
@@ -115,18 +113,22 @@ contract Factory is ERC721TokenReceiver {
         _approve(token);
 
         // add full range liquidity with the 500 tokens and msg.value
+        int24 tickLower = TickMath.minUsableTick(params.tickSpacing);
+        int24 tickUpper = TickMath.maxUsableTick(params.tickSpacing);
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
             params.sqrtPriceX96,
-            TickMath.getSqrtPriceAtTick(MIN_TICK),
-            TickMath.getSqrtPriceAtTick(MAX_TICK),
+            TickMath.getSqrtPriceAtTick(tickLower),
+            TickMath.getSqrtPriceAtTick(tickUpper),
             msg.value,
             token.balanceOf(address(this))
         );
 
+        if (liquidity == 0) revert ZeroLiquidity();
+
         positionManager.mint(
             key,
-            MIN_TICK,
-            MAX_TICK,
+            tickLower,
+            tickUpper,
             liquidity,
             msg.value,
             token.balanceOf(address(this)),
