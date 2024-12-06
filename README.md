@@ -44,10 +44,10 @@ For each AddLiquidity() function call, the TX sender can append a prompt message
 - Minting NFT Proof:
 
     Upon adding liquidity, the hook contract mints a 1:1 NFT liquidity proof for the user.
-    Simultaneously, it temporarily holds the user's UniV4 position NFT during the lock window.
+    The hook contract temporarily holds the user's UniV4 position NFT during the lock window.
 - Redeeming Liquidity:
 
-    After the liquidity lock window expires, the user can redeem their UniV4 liquidity NFT by presenting their NFT liquidity proof.
+    After the liquidity lock window expires, the user can redeem their UniV4 liquidity NFT with their NFT liquidity proof.
 
 ### Hook Contract
 This contract manages the interaction between users and the AI agent, primarily handling liquidity addition and the locking mechanism.
