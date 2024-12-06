@@ -27,24 +27,3 @@ unichainDeployHook:
 .PHONY: unichainDeployFactory
 unichainDeployFactory:
 	forge script script/visionHook/01_Factory.s.sol:FactoryScript ${hook} --sig 'run(address)' --broadcast --rpc-url ${UNICHAIN_RPC_URL} --verify -vvvv
-
-
-
-#### verify contract
-.PHONY: verifyPosm
-verifyPosm:
-	forge verify-contract --chain-id 11155111 --watch  \
-	--constructor-args $(shell cast abi-encode "constructor(address,address,uint256,address,address)" 0x8C4BcBE6b9eF47855f97E675296FA3F6fafa5F1A 0x000000000022D473030F116dDEE9F6B43aC78BA3 300000 0x47B1A0D3F698da55cF8c16978efC68837319C83d 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14) \
-	${address} PositionManager
-
-.PHONY: verifyHook
-verifyHook:
-	forge verify-contract --chain-id 11155111 --watch  \
-	--constructor-args $(shell cast abi-encode "constructor(address,address,address)" 0x8C4BcBE6b9eF47855f97E675296FA3F6fafa5F1A 0x260d7dac1f67e62388236b9e0e2829b90038f70d 0x000000000022D473030F116dDEE9F6B43aC78BA3) \
-	${address} VisionHook
-
-.PHONY: verifyFactory
-verifyFactory:
-	forge verify-contract --chain-id 11155111 --watch  \
-	--constructor-args $(shell cast abi-encode "constructor(address,address,address)" 0x8C4BcBE6b9eF47855f97E675296FA3F6fafa5F1A 0x260d7dac1f67e62388236b9e0e2829b90038f70d 0x000000000022D473030F116dDEE9F6B43aC78BA3) \
-	${address} VisionHook
