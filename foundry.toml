@@ -12,6 +12,9 @@ via-ir=true
 sepolia = "${SEPOLIA_RPC_URL}"
 unichian = "${UNICHAIN_RPC_URL}"
 
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
