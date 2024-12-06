@@ -50,7 +50,7 @@ contract Action {
 
     // in this example, we only swap $TOKEN to $ETH and $ETH to $TOKEN.
     // we will add support to swap to other token when the univ4 router is ready.
-    function performSwap(IPoolManager.SwapParams memory params) external onlyAgent {
+    function performAction(IPoolManager.SwapParams memory params) external onlyAgent {
         POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
     }
 
