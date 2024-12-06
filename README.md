@@ -33,10 +33,10 @@ make deployFactory hook=0xhookAddress
 
 ## Smart Contract Implementation
 ### Overview
+
 We implemented a beforeAddLiquidity hook that verifies whether a user is eligible to send a message to the AI agent.
 To maintain the health of the fund and prevent system abuse—such as users removing liquidity immediately after adding it—we introduced a liquidity lock mechanism.
-
-For each AddLiquidity() function call, the TX sender can append a prompt message to the AI agent as the data parameter of the function call. 
+For each AddLiquidity() function call, the caller can append a prompt message to the AI agent as the hookData parameter of the function call. The hook checks if the added liquidity contains at least beyond a threshold, defined at the deployment of the pool. If the added liquidity is more than this threshold, the hook makes a sendPrompt() call to the AI agent.
 #### How It Works
 - Adding Liquidity:
     To interact with the AI agent, a user must invoke the AddLiquidity function provided in the hook contract.
