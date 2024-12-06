@@ -8,6 +8,16 @@ solc_version = "0.8.26"
 evm_version = "cancun"
 via-ir=true
 
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+unichian = "${UNICHAIN_RPC_URL}"
+
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+unichain = { key = "${ETHERSCAN_API_KEY}", url="https://sepolia.uniscan.xyz" }
+
+
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
