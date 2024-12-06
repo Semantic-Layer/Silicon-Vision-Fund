@@ -6,60 +6,51 @@ import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
-import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {CurrencySettler} from "v4-core/test/utils/CurrencySettler.sol";
-import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {SafeCast} from "v4-core/src/libraries/SafeCast.sol";
-import {PositionManager} from "v4-periphery/src/PositionManager.sol";
-import {PoolModifyLiquidityTestNoChecks} from "v4-core/src/test/PoolModifyLiquidityTestNoChecks.sol"; // not for production; replace it with the actual router in the future.
-import {LPLock} from "./LPLock.sol";
+import {IPositionManager} from "v4-periphery/src/PositionManager.sol";
 import {IERC20Minimal} from "v4-core/src/interfaces/external/IERC20Minimal.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
-import {EasyPosm} from "../test/utils/EasyPosm.sol";
+import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+
+import {EasyPosm} from "../test/utils/EasyPosm.sol";
+import {LPLock} from "./LPLock.sol";
 
 contract VisionHook is BaseHook, LPLock {
     using PoolIdLibrary for PoolKey;
-    using EasyPosm for PositionManager;
+    using EasyPosm for IPositionManager;
     using SafeCast for int128;
-    using SafeCast for int256;
-    using SafeCast for uint256;
     using StateLibrary for IPoolManager;
-    using CurrencySettler for Currency;
 
     uint256 constant amountThreshold = 0.01 ether;
 
     ///@dev a unique id used to identity prompt msgs.
     uint256 public promptId = 1;
 
-    PositionManager public immutable positionManager;
+    IPositionManager public immutable positionManager;
 
     IAllowanceTransfer public immutable permit2;
-
-    PoolModifyLiquidityTestNoChecks public immutable poolModifyLiquidityTest;
 
     event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
 
     error ErrSafeCast();
     error ExpiredPastDeadline();
-    error TooMuchSlippage();
+    error ZeroLiquidity();
+    error Threshold();
+    error WrongValue();
 
     modifier ensure(uint256 deadline) {
         if (deadline < block.timestamp) revert ExpiredPastDeadline();
         _;
     }
 
-    constructor(
-        IPoolManager _poolManager,
-        PoolModifyLiquidityTestNoChecks _poolModifyLiquidityTest,
-        address payable _positionManager,
-        address _permit2
-    ) BaseHook(_poolManager) LPLock(_positionManager) {
-        poolModifyLiquidityTest = _poolModifyLiquidityTest;
-        positionManager = PositionManager(_positionManager);
+    constructor(IPoolManager _poolManager, address payable _positionManager, address _permit2)
+        BaseHook(_poolManager)
+        LPLock(_positionManager)
+    {
+        positionManager = IPositionManager(_positionManager);
         permit2 = IAllowanceTransfer(_permit2);
     }
 
@@ -97,6 +88,8 @@ contract VisionHook is BaseHook, LPLock {
         ensure(params.deadline)
         returns (uint128 liquidity)
     {
+        if (msg.value < amountThreshold) revert Threshold();
+        if (msg.value < params.amount0Desired) revert WrongValue();
         uint256 amount0Before = key.currency0.balanceOfSelf() - msg.value;
         uint256 amount1Before = key.currency1.balanceOfSelf();
 
@@ -109,7 +102,8 @@ contract VisionHook is BaseHook, LPLock {
             params.amount0Desired,
             params.amount1Desired
         );
-        // _mintLPProof(msg.sender, positionManager.nextTokenId());
+        if (liquidity == 0) revert ZeroLiquidity();
+
         IERC20Minimal token = IERC20Minimal(Currency.unwrap(key.currency1));
         token.transferFrom(msg.sender, address(this), params.amount1Desired);
 

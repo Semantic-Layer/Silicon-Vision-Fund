@@ -21,6 +21,7 @@ import {EasyPosm} from "./utils/EasyPosm.sol";
 import {Fixtures} from "./utils/Fixtures.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {ERC721, ERC721TokenReceiver} from "solmate/src/tokens/ERC721.sol";
+import {Factory} from "../src/Factory.sol";
 
 contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
     using SafeCast for uint256;
@@ -36,6 +37,8 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
     VisionHook hook;
     PoolId poolId;
+
+    Factory factory;
 
     uint256 tokenId;
     int24 tickLower;
@@ -54,8 +57,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         address flags = address(
             uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG) ^ (0x4444 << 144) // Namespace the hook to avoid collisions
         );
-        bytes memory constructorArgs =
-            abi.encode(manager, address(modifyLiquidityNoChecks), address(posm), address(permit2)); //Add all the necessary constructor arguments from the hook
+        bytes memory constructorArgs = abi.encode(manager, address(posm), address(permit2)); //Add all the necessary constructor arguments from the hook
         deployCodeTo("VisionHook.sol:VisionHook", constructorArgs, flags);
         hook = VisionHook(flags);
 
@@ -164,5 +166,22 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
         assertEq(hook.balanceOf(address(this)), 0);
         assertEq(ERC721(address(posm)).balanceOf(address(this)), 2);
+    }
+
+    function testFactory() public {
+        factory = new Factory(address(hook), address(swapRouter), posm, manager, permit2);
+
+        Factory.DeployVisionFundParams memory params = Factory.DeployVisionFundParams({
+            fee: 3000,
+            tickSpacing: 60,
+            sqrtPriceX96: SQRT_PRICE_1_1,
+            name: "test token",
+            symbol: "ttoken",
+            decimals: 18,
+            aiAgent: user,
+            systemPrompt: "prompt"
+        });
+
+        factory.deployVisionFund{value: 500 ether}(params);
     }
 }
