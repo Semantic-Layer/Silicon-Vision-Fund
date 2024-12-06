@@ -32,7 +32,7 @@ make deployFactory hook=0xhookAddress
 ```
 
 ## Smart Contracts Implementation
-### overview
+### Overview
 We have implemented a beforeAddLiquidity hook that verifies whether a user is eligible to send a message to the AI agent.
 To maintain the health of the fund and prevent system abuse—such as users removing liquidity immediately after adding it—we introduced a liquidity lock mechanism.
 
