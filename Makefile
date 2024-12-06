@@ -9,7 +9,7 @@ deployHook:
 	forge script script/visionHook/00_VisionHook.s.sol:VisionHookScrpipt --broadcast --rpc-url ${SEPOLIA_RPC_URL} -vvvv
 
 
-# make deployFactory hook=0x3432432dfes
+# make deployFactory hook=0xhookAddress
 .PHONY: deployFactory
 deployFactory:
 	forge script script/visionHook/01_Factory.s.sol:FactoryScript ${hook} --sig 'run(address)' --broadcast --rpc-url ${SEPOLIA_RPC_URL} -vvvv
@@ -20,7 +20,7 @@ unichainDeployHook:
 	forge script script/visionHook/00_VisionHook.s.sol:VisionHookScrpipt --broadcast --rpc-url ${UNICHAIN_RPC_URL} -vvvv
 
 
-# make unichainDeployFactory hook=0x3432432dfes
+# make unichainDeployFactory hook=0xhookAddress
 .PHONY: unichainDeployFactory
 unichainDeployFactory:
 	forge script script/visionHook/01_Factory.s.sol:FactoryScript ${hook} --sig 'run(address)' --broadcast --rpc-url ${UNICHAIN_RPC_URL} -vvvv
