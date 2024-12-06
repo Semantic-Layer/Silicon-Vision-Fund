@@ -9,7 +9,7 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {SafeCast} from "v4-core/src/libraries/SafeCast.sol";
-import {PositionManager} from "v4-periphery/src/PositionManager.sol";
+import {IPositionManager} from "v4-periphery/src/PositionManager.sol";
 import {IERC20Minimal} from "v4-core/src/interfaces/external/IERC20Minimal.sol";
 import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
 import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
@@ -20,7 +20,7 @@ import {LPLock} from "./LPLock.sol";
 
 contract VisionHook is BaseHook, LPLock {
     using PoolIdLibrary for PoolKey;
-    using EasyPosm for PositionManager;
+    using EasyPosm for IPositionManager;
     using SafeCast for int128;
     using StateLibrary for IPoolManager;
 
@@ -29,7 +29,7 @@ contract VisionHook is BaseHook, LPLock {
     ///@dev a unique id used to identity prompt msgs.
     uint256 public promptId = 1;
 
-    PositionManager public immutable positionManager;
+    IPositionManager public immutable positionManager;
 
     IAllowanceTransfer public immutable permit2;
 
@@ -48,7 +48,7 @@ contract VisionHook is BaseHook, LPLock {
         BaseHook(_poolManager)
         LPLock(_positionManager)
     {
-        positionManager = PositionManager(_positionManager);
+        positionManager = IPositionManager(_positionManager);
         permit2 = IAllowanceTransfer(_permit2);
     }
 

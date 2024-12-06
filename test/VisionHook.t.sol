@@ -21,6 +21,7 @@ import {EasyPosm} from "./utils/EasyPosm.sol";
 import {Fixtures} from "./utils/Fixtures.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {ERC721, ERC721TokenReceiver} from "solmate/src/tokens/ERC721.sol";
+import {Factory} from "../src/Factory.sol";
 
 contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
     using SafeCast for uint256;
@@ -36,6 +37,8 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
     VisionHook hook;
     PoolId poolId;
+
+    Factory factory;
 
     uint256 tokenId;
     int24 tickLower;
@@ -163,5 +166,11 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
         assertEq(hook.balanceOf(address(this)), 0);
         assertEq(ERC721(address(posm)).balanceOf(address(this)), 2);
+    }
+
+    function testFactory() public {
+        factory = new Factory(address(hook), address(swapRouter), posm, manager, permit2);
+
+        
     }
 }

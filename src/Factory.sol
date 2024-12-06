@@ -7,7 +7,7 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import "@uniswap/v4-core/test/utils/LiquidityAmounts.sol";
-import {PositionManager} from "v4-periphery/src/PositionManager.sol";
+import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {ERC721, ERC721TokenReceiver} from "solmate/src/tokens/ERC721.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
@@ -17,12 +17,14 @@ import {Token} from "./Token.sol";
 import {EasyPosm} from "../test/utils/EasyPosm.sol";
 
 contract Factory is ERC721TokenReceiver {
+    using EasyPosm for IPositionManager;
+    
     /// @dev Min tick for full range with tick spacing of 60
     int24 internal constant MIN_TICK = -887220;
     /// @dev Max tick for full range with tick spacing of 60
     int24 internal constant MAX_TICK = -MIN_TICK;
 
-    using EasyPosm for PositionManager;
+    
     ///@dev VisionHook address
 
     address public immutable hook;
@@ -33,14 +35,14 @@ contract Factory is ERC721TokenReceiver {
     ///@dev univ4 PoolSwapTest
     address public immutable poolSwapTest;
 
-    PositionManager public immutable positionManager;
+    IPositionManager public immutable positionManager;
 
     IAllowanceTransfer public immutable permit2;
 
     constructor(
         address _hook,
         address _poolSwapTest,
-        PositionManager _posm,
+        IPositionManager _posm,
         IPoolManager _poolManager,
         IAllowanceTransfer _permit2
     ) {
