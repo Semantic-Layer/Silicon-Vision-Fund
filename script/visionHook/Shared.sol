@@ -45,5 +45,11 @@ contract Shared is Script {
         } else {
             revert("chain not supported");
         }
+
+        vm.label(address(poolManager), "poolManager");
+        vm.label(address(posm), "posm");
+        vm.label(address(swapRouter), "swapRouter");
+        vm.label(address(permit2), "permit2");
+
     }
 }
