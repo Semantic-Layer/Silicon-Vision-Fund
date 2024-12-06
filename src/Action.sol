@@ -10,11 +10,18 @@ import {IERC20Minimal} from "v4-core/src/interfaces/external/IERC20Minimal.sol";
 
 ///@dev it's treasury as well as the where ai can perform swap
 contract Action {
+    address public immutable HOOK;
     PoolSwapTest public immutable POOL_SWAP;
     address public immutable TOKEN; // $ETH-$TOKEN
     address public immutable AI_AGENT;
     PoolKey public POOL_KEY;
     bytes public SYSTEM_PROMPT;
+
+    // todo temperory solution: store prompt msg directly here. we can use offchain event indexing to get user msg instead.
+    mapping(uint256 id => Response response) responses;
+
+    event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
+    event Respond(PoolId indexed poolId, uint256 indexed id, bool decision, bytes response);
 
     error OnlyAgent();
 
@@ -23,6 +30,11 @@ contract Action {
             revert OnlyAgent();
         }
         _;
+    }
+
+    struct Response {
+        bool decision;
+        bytes response;
     }
 
     struct AddLiquidityParams {
@@ -50,8 +62,19 @@ contract Action {
 
     // in this example, we only swap $TOKEN to $ETH and $ETH to $TOKEN.
     // we will add support to swap to other token when the univ4 router is ready.
-    function performAction(IPoolManager.SwapParams memory params) external onlyAgent {
-        POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
+    function performAction(
+        IPoolManager.SwapParams memory params,
+        PoolId poolId,
+        uint256 id,
+        bool decision,
+        bytes calldata response
+    ) public onlyAgent {
+        if (decision) {
+            POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
+        }
+
+        responses[id] = Response({decision: decision, response: response});
+        emit Respond(poolId, id, decision, response);
     }
 
     function setERC20Allowances(address token, address to, uint256 amount) external onlyAgent {

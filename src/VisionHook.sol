@@ -29,6 +29,9 @@ contract VisionHook is BaseHook, LPLock {
     ///@dev a unique id used to identity prompt msgs.
     uint256 public promptId = 1;
 
+    // todo temperory solution: store prompt msg directly here. we can use offchain event indexing to get user msg instead.
+    mapping(uint256 id => bytes prompt) userPrompts;
+
     IPositionManager public immutable positionManager;
 
     IAllowanceTransfer public immutable permit2;
@@ -138,7 +141,12 @@ contract VisionHook is BaseHook, LPLock {
     // -----------------------------------------------
 
     // reference: approvePosmCurrency
-    function beforeInitialize(address, PoolKey calldata key, uint160) external override returns (bytes4) {
+    function beforeInitialize(address, PoolKey calldata key, uint160)
+        external
+        override
+        onlyPoolManager
+        returns (bytes4)
+    {
         address token = Currency.unwrap(key.currency1);
         // approve permit2
         IERC20Minimal(token).approve(address(permit2), type(uint256).max);
@@ -185,6 +193,7 @@ contract VisionHook is BaseHook, LPLock {
     }
 
     function _sendPrompt(PoolId poolId, uint256 id, address user, int256 liquidity, bytes memory prompt) internal {
+        userPrompts[id] = prompt;
         emit PromptSent(poolId, id, user, liquidity, prompt);
     }
 

@@ -33,12 +33,11 @@ contract Factory is ERC721TokenReceiver {
 
     IAllowanceTransfer public immutable permit2;
 
-
     // for deployed funds
     PoolId[] public pools;
 
     ///@dev pool id => action contract address
-    mapping(PoolId poolId => address action) actions; 
+    mapping(PoolId poolId => address action) actions;
 
     error ZeroValue();
     error ZeroLiquidity();
@@ -96,6 +95,7 @@ contract Factory is ERC721TokenReceiver {
     /// @dev warning: fund deployer should calculate how much eth needed to seed liqiudity with 500 tokens.
     /// any unused tokens will be sent to action contracts
     /// @param params DeployVisionFundParams
+
     function deployVisionFund(DeployVisionFundParams calldata params) external payable {
         if (msg.value == 0) revert ZeroValue();
         Token token =
@@ -110,8 +110,6 @@ contract Factory is ERC721TokenReceiver {
             })
         );
 
-        
-        
         address action = _deployAction(
             DeployActionParams({
                 poolSwapTest: poolSwapTest,
@@ -160,7 +158,7 @@ contract Factory is ERC721TokenReceiver {
     }
 
     ///@dev return the amount of total deployed pools
-    function totalPoolLength() public view returns(uint256) {
+    function totalPoolLength() public view returns (uint256) {
         return pools.length;
     }
 
@@ -171,7 +169,7 @@ contract Factory is ERC721TokenReceiver {
 
     ///@dev helper function to calculate how much eth is needed when seeding liquidity to a fund pool at a specific price
     ///  funds deployer will need to provide full range liquidity to the pool with eth and 500 tokens.
-    /// 
+    ///
     /// @param tickSpacing tickSpacing of the pool. used to calculate the min and max tick
     /// @param sqrtPriceX96  the initial price of the pool.
     function ethNeededForLiquidity(int24 tickSpacing, uint160 sqrtPriceX96) public pure returns (uint256 ethAmount) {
@@ -179,14 +177,11 @@ contract Factory is ERC721TokenReceiver {
         int24 tickUpper = TickMath.maxUsableTick(tickSpacing);
         uint160 sqrtPriceAX96 = TickMath.getSqrtPriceAtTick(tickLower);
         uint160 sqrtPriceBX96 = TickMath.getSqrtPriceAtTick(tickUpper);
-        
-        uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(sqrtPriceAX96,
-            sqrtPriceX96,500 * 10 ** 18);
+
+        uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(sqrtPriceAX96, sqrtPriceX96, 500 * 10 ** 18);
 
         ethAmount = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96, sqrtPriceBX96, liquidity);
     }
-
-
 
     function _createPool(CreatPoolParams memory params) internal returns (PoolKey memory key) {
         // create(initialize) a univ4 pool
@@ -194,8 +189,6 @@ contract Factory is ERC721TokenReceiver {
             Currency.wrap(address(0)), Currency.wrap(params.token), params.fee, params.tickSpacing, IHooks(hook)
         );
         poolManager.initialize(key, params.sqrtPriceX96);
-
-        
     }
 
     function _deployAction(DeployActionParams memory params) internal returns (address) {

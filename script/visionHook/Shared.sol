@@ -50,6 +50,5 @@ contract Shared is Script {
         vm.label(address(posm), "posm");
         vm.label(address(swapRouter), "swapRouter");
         vm.label(address(permit2), "permit2");
-
     }
 }
