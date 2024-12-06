@@ -65,7 +65,6 @@ We implemented the beforeAddLiquidity Hook and the `addLiquidity` function.
 The Action Contract serves as the treasury contract, managed by the AI agent. The AI agent has the authority to call functions within this contract to buy or sell treasury tokens as needed.
 ### Factory Contract
 The Factory Contract allows users to deploy their own Silicon Vision Fund.
-#### Key Features:
 - Pool Creation:
     Deploys a new pool with the integrated hook contract.
     Instantiates a new Action Contract.
