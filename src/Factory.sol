@@ -91,7 +91,11 @@ contract Factory is ERC721TokenReceiver {
         address aiAgent; // ai agent wallet address
         bytes systemPrompt; // system prompt for the ai agent
     }
-
+    /// @notice user deploy a vision fund with provided eth
+    /// a $token-$eth pool will be created with initial liqudity with the provided eth.
+    /// @dev warning: fund deployer should calculate how much eth needed to seed liqiudity with 500 tokens.
+    /// any unused tokens will be sent to action contracts
+    /// @param params DeployVisionFundParams
     function deployVisionFund(DeployVisionFundParams calldata params) external payable {
         if (msg.value == 0) revert ZeroValue();
         Token token =
@@ -151,9 +155,10 @@ contract Factory is ERC721TokenReceiver {
             ""
         );
 
-        // return the excess amount of token to msg.msg.sender
-        token.transfer(msg.sender, token.balanceOf(address(this)));
+        // return the excess amount of token to action contract
+        token.transfer(action, token.balanceOf(address(this)));
     }
+
     ///@dev return the amount of total deployed pools
     function totalPoolLength() public view returns(uint256) {
         return pools.length;
@@ -162,6 +167,23 @@ contract Factory is ERC721TokenReceiver {
     ///@dev return all pools
     function AllPools() public view returns (PoolId[] memory) {
         return pools;
+    }
+
+    ///@dev helper function to calculate how much eth is needed when seeding liquidity to a fund pool at a specific price
+    ///  funds deployer will need to provide full range liquidity to the pool with eth and 500 tokens.
+    /// 
+    /// @param tickSpacing tickSpacing of the pool. used to calculate the min and max tick
+    /// @param sqrtPriceX96  the initial price of the pool.
+    function ethNeededForLiquidity(int24 tickSpacing, uint160 sqrtPriceX96) public pure returns (uint256 ethAmount) {
+        int24 tickLower = TickMath.minUsableTick(tickSpacing);
+        int24 tickUpper = TickMath.maxUsableTick(tickSpacing);
+        uint160 sqrtPriceAX96 = TickMath.getSqrtPriceAtTick(tickLower);
+        uint160 sqrtPriceBX96 = TickMath.getSqrtPriceAtTick(tickUpper);
+        
+        uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(sqrtPriceAX96,
+            sqrtPriceX96,500 * 10 ** 18);
+
+        ethAmount = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96, sqrtPriceBX96, liquidity);
     }
 
 
