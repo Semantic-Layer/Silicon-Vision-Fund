@@ -96,12 +96,16 @@ contract Factory is ERC721TokenReceiver {
     /// any unused tokens will be sent to action contracts
     /// @param params DeployVisionFundParams
 
-    function deployVisionFund(DeployVisionFundParams calldata params) external payable {
+    function deployVisionFund(DeployVisionFundParams calldata params)
+        external
+        payable
+        returns (PoolKey memory key, address action, address tokenAddr)
+    {
         if (msg.value == 0) revert ZeroValue();
         Token token =
             _deployToken(DeployTokenParams({name: params.name, symbol: params.symbol, decimals: params.decimals}));
-
-        PoolKey memory key = _createPool(
+        tokenAddr = address(token);
+        key = _createPool(
             CreatPoolParams({
                 token: address(token),
                 fee: params.fee,
@@ -110,7 +114,7 @@ contract Factory is ERC721TokenReceiver {
             })
         );
 
-        address action = _deployAction(
+        action = _deployAction(
             DeployActionParams({
                 poolSwapTest: poolSwapTest,
                 token: address(token),
@@ -154,7 +158,10 @@ contract Factory is ERC721TokenReceiver {
         );
 
         // return the excess amount of token to action contract
-        token.transfer(action, token.balanceOf(address(this)));
+        uint256 balance = token.balanceOf(address(this));
+        if (balance != 0) {
+            token.transfer(action, balance);
+        }
     }
 
     ///@dev return the amount of total deployed pools

@@ -24,13 +24,13 @@ contract VisionHook is BaseHook, LPLock {
     using SafeCast for int128;
     using StateLibrary for IPoolManager;
 
-    uint256 constant amountThreshold = 0.01 ether;
+    uint256 constant amountThreshold = 0.001 ether;
 
     ///@dev a unique id used to identity prompt msgs.
     uint256 public promptId = 1;
 
     // todo temperory solution: store prompt msg directly here. we can use offchain event indexing to get user msg instead.
-    mapping(uint256 id => bytes prompt) userPrompts;
+    mapping(uint256 id => bytes prompt) public userPrompts;
 
     IPositionManager public immutable positionManager;
 
@@ -41,7 +41,7 @@ contract VisionHook is BaseHook, LPLock {
     error ErrSafeCast();
     error ExpiredPastDeadline();
     error ZeroLiquidity();
-    error Threshold();
+    error Threshold(uint256 amount);
     error WrongValue();
 
     modifier ensure(uint256 deadline) {
@@ -91,7 +91,7 @@ contract VisionHook is BaseHook, LPLock {
         ensure(params.deadline)
         returns (uint128 liquidity)
     {
-        if (msg.value < amountThreshold) revert Threshold();
+        if (msg.value < amountThreshold) revert Threshold(msg.value);
         if (msg.value < params.amount0Desired) revert WrongValue();
         uint256 amount0Before = key.currency0.balanceOfSelf() - msg.value;
         uint256 amount1Before = key.currency1.balanceOfSelf();

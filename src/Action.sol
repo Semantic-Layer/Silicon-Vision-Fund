@@ -18,7 +18,7 @@ contract Action {
     bytes public SYSTEM_PROMPT;
 
     // todo temperory solution: store prompt msg directly here. we can use offchain event indexing to get user msg instead.
-    mapping(uint256 id => Response response) responses;
+    mapping(uint256 id => Response response) public responses;
 
     event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
     event Respond(PoolId indexed poolId, uint256 indexed id, bool decision, bytes response);
