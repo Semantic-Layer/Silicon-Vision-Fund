@@ -33,6 +33,12 @@ contract Factory is ERC721TokenReceiver {
 
     IAllowanceTransfer public immutable permit2;
 
+    // for deployed funds
+    PoolId[] public pools;
+
+    ///@dev pool id => action contract address
+    mapping(PoolId poolId => address action) actions;
+
     error ZeroValue();
     error ZeroLiquidity();
 
@@ -84,13 +90,22 @@ contract Factory is ERC721TokenReceiver {
         address aiAgent; // ai agent wallet address
         bytes systemPrompt; // system prompt for the ai agent
     }
+    /// @notice user deploy a vision fund with provided eth
+    /// a $token-$eth pool will be created with initial liqudity with the provided eth.
+    /// @dev warning: fund deployer should calculate how much eth needed to seed liqiudity with 500 tokens.
+    /// any unused tokens will be sent to action contracts
+    /// @param params DeployVisionFundParams
 
-    function deployVisionFund(DeployVisionFundParams calldata params) external payable {
+    function deployVisionFund(DeployVisionFundParams calldata params)
+        external
+        payable
+        returns (PoolKey memory key, address action, address tokenAddr)
+    {
         if (msg.value == 0) revert ZeroValue();
         Token token =
             _deployToken(DeployTokenParams({name: params.name, symbol: params.symbol, decimals: params.decimals}));
-
-        PoolKey memory key = _createPool(
+        tokenAddr = address(token);
+        key = _createPool(
             CreatPoolParams({
                 token: address(token),
                 fee: params.fee,
@@ -98,7 +113,8 @@ contract Factory is ERC721TokenReceiver {
                 sqrtPriceX96: params.sqrtPriceX96
             })
         );
-        address action = _deployAction(
+
+        action = _deployAction(
             DeployActionParams({
                 poolSwapTest: poolSwapTest,
                 token: address(token),
@@ -107,6 +123,10 @@ contract Factory is ERC721TokenReceiver {
                 systemPrompt: params.systemPrompt
             })
         );
+
+        PoolId id = key.toId();
+        pools.push(id);
+        actions[id] = action;
 
         token.mint(action);
 
@@ -136,6 +156,38 @@ contract Factory is ERC721TokenReceiver {
             block.timestamp,
             ""
         );
+
+        // return the excess amount of token to action contract
+        uint256 balance = token.balanceOf(address(this));
+        if (balance != 0) {
+            token.transfer(action, balance);
+        }
+    }
+
+    ///@dev return the amount of total deployed pools
+    function totalPoolLength() public view returns (uint256) {
+        return pools.length;
+    }
+
+    ///@dev return all pools
+    function AllPools() public view returns (PoolId[] memory) {
+        return pools;
+    }
+
+    ///@dev helper function to calculate how much eth is needed when seeding liquidity to a fund pool at a specific price
+    ///  funds deployer will need to provide full range liquidity to the pool with eth and 500 tokens.
+    ///
+    /// @param tickSpacing tickSpacing of the pool. used to calculate the min and max tick
+    /// @param sqrtPriceX96  the initial price of the pool.
+    function ethNeededForLiquidity(int24 tickSpacing, uint160 sqrtPriceX96) public pure returns (uint256 ethAmount) {
+        int24 tickLower = TickMath.minUsableTick(tickSpacing);
+        int24 tickUpper = TickMath.maxUsableTick(tickSpacing);
+        uint160 sqrtPriceAX96 = TickMath.getSqrtPriceAtTick(tickLower);
+        uint160 sqrtPriceBX96 = TickMath.getSqrtPriceAtTick(tickUpper);
+
+        uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(sqrtPriceAX96, sqrtPriceX96, 500 * 10 ** 18);
+
+        ethAmount = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96, sqrtPriceBX96, liquidity);
     }
 
     function _createPool(CreatPoolParams memory params) internal returns (PoolKey memory key) {

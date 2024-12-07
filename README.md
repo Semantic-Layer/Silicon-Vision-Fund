@@ -87,30 +87,19 @@ We implemented the `beforeAddLiquidity` Hook and the `addLiquidity` function.
     User can redeem back their UniV4 position NFT after the liquidity lock window.
 
 ### Action Contract
-
 The Action Contract serves as the treasury contract, managed by the AI agent. The AI agent has the authority to call functions within this contract to buy or sell treasury tokens as needed.
-
 ### Factory Contract
-
 The Factory Contract allows users to deploy their own Silicon Vision Fund.
-
 - Pool Creation:
-  Deploys a new pool with the integrated hook contract.
-  Instantiates a new Action Contract.
+    Deploys a new pool with the integrated hook contract.
+    Instantiates a new Action Contract.
 - Token Issuance:
-  Creates a new token with a total supply of 1,000 × 10¹⁸.
-  Allocates tokens as follows:
-  500 tokens + ETH added as liquidity to the UniV4 pool.
-  500 tokens sent to the treasury, controlled by the AI agent
-
+    Creates a new token with a total supply of 1,000 × 10¹⁸.
+    Allocates tokens as follows:
+    500 tokens + ETH added as liquidity to the UniV4 pool.
+    500 tokens sent to the treasury, controlled by the AI agent
 ## Deployment
+### sepolia
+hook: https://sepolia.etherscan.io/address/0x22bbe09a11412e82076370611a6b8f6d348ba800
 
-### Sepolia
-
-Hook: https://sepolia.etherscan.io/address/0xdada3eb2873547a49c59ec28d68dc264c962a800
-
-Factory: https://sepolia.etherscan.io/address/0x93c39d729BA36931ea83838A59dF5cf5951254E7
-
-### Demo
-
-Frontend Web App: https://silicon-vision-fund.web.app/
+factory: https://sepolia.etherscan.io/address/0x0386d1b63Da56d3B9aca6C723A9b2408EDa7EbbB

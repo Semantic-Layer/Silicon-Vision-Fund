@@ -30,7 +30,7 @@ abstract contract LPLock is ERC721, ERC721TokenReceiver {
 
     error ErrLocked();
 
-    constructor(address _uniNFT) ERC721("VisonLP", "VLP") {
+    constructor(address _uniNFT) ERC721("Sillicon Vision Fund LP proof", "SVFLPP") {
         uniNFT = ERC721(_uniNFT);
     }
 
