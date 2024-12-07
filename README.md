@@ -102,4 +102,4 @@ The Factory Contract allows users to deploy their own Silicon Vision Fund.
 ### sepolia
 hook: https://sepolia.etherscan.io/address/0x22bbe09a11412e82076370611a6b8f6d348ba800
 
-factory: https://sepolia.etherscan.io/address/0x0386d1b63Da56d3B9aca6C723A9b2408EDa7EbbB
+factory: https://sepolia.etherscan.io/address/0xd516Ccb28176b3599341a110698d420e7DE08C80

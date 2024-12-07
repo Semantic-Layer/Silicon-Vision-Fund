@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
+import {SqrtPriceMath} from "v4-core/src/libraries/SqrtPriceMath.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
@@ -227,14 +228,18 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         // int24 tickUpper_ = TickMath.getTickAtSqrtPrice(792281625142643375935439503360000); // 1000/0.1
 
         (uint160 currentSqrtPriceX96, int24 currentTick,,) = manager.getSlot0(key.toId());
-
+        console2.log("current tick", currentTick);
+        console2.log("currentSqrtPriceX96", currentSqrtPriceX96);
         uint256 amount0 = 0.01 ether;
         uint128 singleSideLiquditity =
             LiquidityAmounts.getLiquidityForAmount0(currentSqrtPriceX96, sqrtPriceBX96, amount0);
         console2.log("singleSideLiquditity", singleSideLiquditity);
-
+        int24 tickUpper_ = roundUpTick(TickMath.getTickAtSqrtPrice(currentSqrtPriceX96), 60);
+        uint160 priceUpper_ = TickMath.getSqrtPriceAtTick(tickUpper_);
+        console2.log("priceUpper_", priceUpper_);
+        console2.log("priceUpper_ compare ", currentSqrtPriceX96 <= priceUpper_);
         uint256 liquidity = LiquidityAmounts.getLiquidityForAmounts(
-            currentSqrtPriceX96, TickMath.getSqrtPriceAtTick(tickB), TickMath.getSqrtPriceAtTick(tickMax), amount0, 0
+            currentSqrtPriceX96, priceUpper_, TickMath.getSqrtPriceAtTick(tickMax), amount0, 0
         );
 
         console2.log("liquidity", liquidity);
@@ -242,7 +247,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         hook.AddLiquidity{value: amount0}(
             poolKey,
             VisionHook.AddLiquidityParams({
-                tickLower: tickB + 1, // add 1 to fit the tick spacing
+                tickLower: tickB,
                 tickUpper: tickMax,
                 amount0Desired: amount0,
                 amount1Desired: 0,
@@ -250,6 +255,25 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
             }),
             "hello"
         );
+
+        // add AddLiquidtyWithSqrtPrice
+
+        hook.AddLiquidtyWithSqrtPrice{value: amount0}(
+            poolKey,
+            VisionHook.AddLiquidityWithSqrtPriceParams({
+                lowerPrice: sqrtPriceBX96,
+                upperPrice: TickMath.getSqrtPriceAtTick(tickMax),
+                amount0Desired: amount0,
+                amount1Desired: 0,
+                deadline: block.timestamp
+            }),
+            "hello"
+        );
+    }
+    // get a tick that fits tickSpacing with rounding up
+
+    function roundUpTick(int24 tick, int24 tickSpacing) public pure returns (int24) {
+        return tick + (tickSpacing - tick % tickSpacing);
     }
 
     function testFactory_ethNeededForLiquidity() public {

@@ -37,7 +37,7 @@ contract Factory is ERC721TokenReceiver {
     PoolId[] public pools;
 
     ///@dev pool id => action contract address
-    mapping(PoolId poolId => address action) actions;
+    mapping(PoolId poolId => address action) public actions;
 
     error ZeroValue();
     error ZeroLiquidity();
