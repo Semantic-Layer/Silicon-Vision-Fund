@@ -223,6 +223,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         // 2. add single side liquidity with 0.001 ether
         int24 tickMin = TickMath.minUsableTick(60);
         int24 tickMax = TickMath.maxUsableTick(60);
+        console2.log("tick max", tickMax);
 
         // int24 tickUpper =
         // int24 tickUpper_ = TickMath.getTickAtSqrtPrice(792281625142643375935439503360000); // 1000/0.1
@@ -244,25 +245,13 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
         console2.log("liquidity", liquidity);
 
+        console2.log("rounded up tickb", roundUpTick(tickB, 60));
+
         hook.AddLiquidity{value: amount0}(
             poolKey,
             VisionHook.AddLiquidityParams({
-                tickLower: tickB,
+                tickLower: roundUpTick(tickB, 60),
                 tickUpper: tickMax,
-                amount0Desired: amount0,
-                amount1Desired: 0,
-                deadline: block.timestamp
-            }),
-            "hello"
-        );
-
-        // add AddLiquidtyWithSqrtPrice
-
-        hook.AddLiquidtyWithSqrtPrice{value: amount0}(
-            poolKey,
-            VisionHook.AddLiquidityWithSqrtPriceParams({
-                lowerPrice: sqrtPriceBX96,
-                upperPrice: TickMath.getSqrtPriceAtTick(tickMax),
                 amount0Desired: amount0,
                 amount1Desired: 0,
                 deadline: block.timestamp

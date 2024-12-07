@@ -84,41 +84,7 @@ contract VisionHook is BaseHook, LPLock {
         uint256 deadline;
     }
 
-    struct AddLiquidityWithSqrtPriceParams {
-        uint160 lowerPrice;
-        uint160 upperPrice;
-        uint256 amount0Desired;
-        uint256 amount1Desired;
-        uint256 deadline;
-    }
-
-    // allow user to quick add single side liquidity with eth only
-    function quickAddLiquidity(PoolKey calldata key, AddLiquidityParams calldata params, bytes calldata prompt)
-        external
-        payable
-    {
-        (uint160 sqrtPriceX96,,,) = poolManager.getSlot0(key.toId());
-        int24 tickSpacing = key.tickSpacing;
-    }
-
-    function AddLiquidtyWithSqrtPrice(
-        PoolKey calldata key,
-        AddLiquidityWithSqrtPriceParams memory params,
-        bytes calldata prompt
-    ) public payable returns (uint128 liquidity) {
-        int24 tickLower = TickMath.getTickAtSqrtPrice(params.lowerPrice);
-        int24 tickUpper = TickMath.getTickAtSqrtPrice(params.upperPrice);
-        AddLiquidityParams memory p = AddLiquidityParams({
-            tickLower: tickLower,
-            tickUpper: tickUpper,
-            amount0Desired: params.amount0Desired,
-            amount1Desired: params.amount1Desired,
-            deadline: params.deadline
-        });
-        return AddLiquidity(key, p, prompt);
-    }
     // to send prompt, user has to add liquidty via this function
-
     function AddLiquidity(PoolKey calldata key, AddLiquidityParams memory params, bytes calldata prompt)
         public
         payable
