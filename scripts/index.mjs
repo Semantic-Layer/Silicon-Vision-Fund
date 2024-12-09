@@ -125,7 +125,7 @@ const watch = publicClient.watchContractEvent({
 			const swapParams = {
 				zeroForOne: true,             // example: true means token0 -> token1
 				amountSpecified: -1000,      // for example, -1000 means exactIn of 1000 units
-				sqrtPriceLimitX96: MIN_SQRT_PRICE - 1        // if you have a specific price limit, set it here
+				sqrtPriceLimitX96: MIN_SQRT_PRICE + 1        // if you have a specific price limit, set it here
 			};
 
 			const decision = false;    // Example placeholder
