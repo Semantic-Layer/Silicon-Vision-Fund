@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { createPublicClient, createWalletClient, http, parseAbi, privateKeyToAccount, zeroAddress } from 'viem';
+import { createPublicClient, createWalletClient, http, parseAbi, zeroAddress } from 'viem';
 import { sepolia } from 'viem/chains'
+import { privateKeyToAccount } from 'viem/accounts'
 
 const MIN_SQRT_PRICE = 4295128739
 
@@ -32,7 +33,7 @@ export const publicClient = createPublicClient({
 
 // walletClient for sending transaction
 const walletClient = createWalletClient({
-	chain: mainnet,
+	chain: sepolia,
 	transport: http(),
 	account,
 });
@@ -76,7 +77,7 @@ const watch = publicClient.watchContractEvent({
 			// Construct the params for performAction
 			const params = {
 				tokenIn: '0xd02119a87AD7BA20F82DDD35CF8452F77A798eF5',       // Example placeholder
-				tokenOut: 'zeroAddress',     // Example placeholder
+				tokenOut: zeroAddress,     // Example placeholder
 				amountIn: 1000n,                   // Example placeholder
 				amountOutMin: 900n,                // Example placeholder
 				sqrtPriceLimitX96: MIN_SQRT_PRICE+1              // Example placeholder
