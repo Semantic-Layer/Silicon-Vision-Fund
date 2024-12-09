@@ -100,6 +100,6 @@ The Factory Contract allows users to deploy their own Silicon Vision Fund.
     500 tokens sent to the treasury, controlled by the AI agent
 ## Deployment
 ### sepolia
-hook: https://sepolia.etherscan.io/address/0x22bbe09a11412e82076370611a6b8f6d348ba800
+hook: https://sepolia.etherscan.io/address/0x5cab76e6cb8b80f2f6ecc7db6d81042ec57e2400
 
-factory: https://sepolia.etherscan.io/address/0xd516Ccb28176b3599341a110698d420e7DE08C80
+factory: https://sepolia.etherscan.io/address/0x38C369190A1736B8Bf7E6DD3eE5108651227a22b

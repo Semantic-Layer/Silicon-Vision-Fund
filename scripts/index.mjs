@@ -17,7 +17,7 @@ const account = privateKeyToAccount(PRIVATE_KEY);
 // load contracts
 const HookAbi = parseAbi([
 	// Adjust PoolId representation to match actual contract definition
-	"event PromptSent((bytes32) indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt)"
+	"event PromptSent((bytes32) indexed poolId, uint256 indexed id, address indexed user, bytes prompt)"
 ]);
 
 const ActionAbi = parseAbi([
@@ -66,12 +66,11 @@ const watch = publicClient.watchContractEvent({
 	eventName: 'PromptSent',
 	onLogs: async (logs) => {
 		for (const log of logs) {
-			const { args: { poolId, id, user, liquidity, prompt } } = log;
+			const { args: { poolId, id, user, prompt } } = log;
 			console.log('PromptSent event detected');
 			console.log(`poolId: ${poolId}`);
 			console.log(`id: ${id}`);
 			console.log(`user: ${user}`);
-			console.log(`liquidity: ${liquidity}`);
 			console.log(`prompt: ${prompt}`);
 
 			// Construct the params for performAction

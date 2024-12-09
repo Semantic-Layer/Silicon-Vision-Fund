@@ -9,7 +9,7 @@ import "./Shared.sol";
 
 contract VisionHookScrpipt is Shared {
     function run() public {
-        uint160 flags = uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG);
+        uint160 flags = uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG);
 
         bytes memory constructorArgs = abi.encode(poolManager, address(posm), address(permit2));
 

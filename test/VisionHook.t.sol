@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "forge-std/Test.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
@@ -57,11 +56,14 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
         // Deploy the hook to an address with the correct flags
         address flags = address(
-            uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG) ^ (0x4444 << 144) // Namespace the hook to avoid collisions
+            uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG) ^ (0x4444 << 144) // Namespace the hook to avoid collisions
         );
+        console2.log("flags", flags);
         bytes memory constructorArgs = abi.encode(manager, address(posm), address(permit2)); //Add all the necessary constructor arguments from the hook
         deployCodeTo("VisionHook.sol:VisionHook", constructorArgs, flags);
         hook = VisionHook(flags);
+
+        console2.log("hook deployed at", address(hook));
 
         // approve hook
         IERC20(Currency.unwrap(currency0)).approve(address(hook), type(uint256).max);
@@ -141,7 +143,13 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
         currency1.transfer(address(hook), 100000);
 
-        hook.AddLiquidity{value: amount0Expected}(
+        uint256 beforeLPNFTbalanace = ERC721(address(posm)).balanceOf(address(hook));
+        console.log("beforeLPNFTbalanace", beforeLPNFTbalanace);
+        assertEq(beforeLPNFTbalanace, 0);
+        bytes memory prompt = bytes("hello");
+        vm.expectEmit(true, true, true, true); // Match all indexed arguments and non-indexed argument
+        emit VisionHook.PromptSent(poolId, 1, address(this), prompt);
+        uint128 addedLiquidity = hook.addLiquidity{value: amount0Expected}(
             key,
             VisionHook.AddLiquidityParams({
                 tickLower: tickLower,
@@ -150,8 +158,11 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
                 amount1Desired: amount1Expected,
                 deadline: MAX_DEADLINE
             }),
-            bytes("hello")
+            prompt
         );
+
+        
+        
 
         // check nft balance
         uint256 afterNFTbalanace = hook.balanceOf(address(this));
@@ -247,7 +258,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
 
         console2.log("rounded up tickb", roundUpTick(tickB, 60));
 
-        hook.AddLiquidity{value: amount0}(
+        hook.addLiquidity{value: amount0}(
             poolKey,
             VisionHook.AddLiquidityParams({
                 tickLower: roundUpTick(tickB, 60),
