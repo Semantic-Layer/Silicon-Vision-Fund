@@ -23,10 +23,19 @@ contract Action {
     event Respond(PoolId indexed poolId, uint256 indexed id, bool decision, bytes response);
 
     error OnlyAgent();
+    error Responded();
+    error EmptyResponse();
 
     modifier onlyAgent() {
         if (msg.sender != AI_AGENT) {
             revert OnlyAgent();
+        }
+        _;
+    }
+
+    modifier NotResponded(uint256 id) {
+        if (responses[id].response.length != 0) {
+            revert Responded();
         }
         _;
     }
@@ -58,10 +67,12 @@ contract Action {
         uint256 id,
         bool decision,
         bytes calldata response
-    ) public onlyAgent payable {
+    ) public payable onlyAgent {
         if (decision) {
             POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
         }
+
+        if (response.length == 0) revert EmptyResponse();
 
         responses[id] = Response({decision: decision, response: response});
         emit Respond(poolId, id, decision, response);
