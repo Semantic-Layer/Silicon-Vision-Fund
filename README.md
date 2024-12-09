@@ -54,14 +54,14 @@ make deployFactory hook=<DEPLOYED_HOOK_ADDRESS>
 
 ### Overview
 
-We implemented a `beforeAddLiquidity` hook that verifies whether a user is eligible to send a message to the AI agent.
+We implemented a `afterAddLiquidity` hook that verifies whether a user is eligible to send a message to the AI agent.
 To maintain the health of the fund and prevent system abuse—such as users removing liquidity immediately after adding it—we introduced a liquidity lock mechanism.
-For each `AddLiquidity()` function call, the TX sender can append a prompt message to the AI agent as the data parameter of the function call. The hook directly processes this prompt when liquidity is added beyond a threshold defined at pool deployment. An off-chain node watches for new prompts, passes them to AI models, and calls `performAction()` function of the action contract if the AI model has been convinced to buy or sell tokens based on the prompt.
+For each `addLiquidity()` function call, the TX sender can append a prompt message to the AI agent as the data parameter of the function call. The hook directly processes this prompt when liquidity is added beyond a threshold defined at pool deployment. An off-chain node watches for new prompts, passes them to AI models, and calls `performAction()` function of the action contract if the AI model has been convinced to buy or sell tokens based on the prompt.
 
 #### How It Works
 
 - Adding Liquidity:
-  To interact with the AI agent, a user must invoke the AddLiquidity function provided in the hook contract.
+  To interact with the AI agent, a user must invoke the `addLiquidity` function provided in the hook contract.
 
 - Minting NFT Proof:
 
@@ -76,7 +76,7 @@ For each `AddLiquidity()` function call, the TX sender can append a prompt messa
 
 This contract manages the interaction between users and the AI agent, primarily handling liquidity addition and the locking mechanism.
 
-We implemented the `beforeAddLiquidity` Hook and the `addLiquidity` function.
+We implemented the `afterAddLiquidity` Hook and the `addLiquidity` function.
 
 - Verifies the caller is the hook contract itself.
 - Checks that the user provides at least `X` ETH worth of liquidity tokens.
@@ -87,19 +87,26 @@ We implemented the `beforeAddLiquidity` Hook and the `addLiquidity` function.
     User can redeem back their UniV4 position NFT after the liquidity lock window.
 
 ### Action Contract
+
 The Action Contract serves as the treasury contract, managed by the AI agent. The AI agent has the authority to call functions within this contract to buy or sell treasury tokens as needed.
+
 ### Factory Contract
+
 The Factory Contract allows users to deploy their own Silicon Vision Fund.
+
 - Pool Creation:
-    Deploys a new pool with the integrated hook contract.
-    Instantiates a new Action Contract.
+  Deploys a new pool with the integrated hook contract.
+  Instantiates a new Action Contract.
 - Token Issuance:
-    Creates a new token with a total supply of 1,000 × 10¹⁸.
-    Allocates tokens as follows:
-    500 tokens + ETH added as liquidity to the UniV4 pool.
-    500 tokens sent to the treasury, controlled by the AI agent
+  Creates a new token with a total supply of 1,000 × 10¹⁸.
+  Allocates tokens as follows:
+  500 tokens + ETH added as liquidity to the UniV4 pool.
+  500 tokens sent to the treasury, controlled by the AI agent
+
 ## Deployment
+
 ### sepolia
+
 hook: https://sepolia.etherscan.io/address/0x5cab76e6cb8b80f2f6ecc7db6d81042ec57e2400
 
 factory: https://sepolia.etherscan.io/address/0x38C369190A1736B8Bf7E6DD3eE5108651227a22b
