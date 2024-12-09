@@ -4,7 +4,7 @@
 root = true
 
 # Unix-style newlines with a newline ending every file
-[*.{ts,tsx,js,jsx}]
+[*.{ts,tsx,js,jsx,mjs}]
 charset = utf-8
 indent_size = 2
 indent_style = tab
