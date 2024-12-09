@@ -36,15 +36,6 @@ contract Action {
         bytes response;
     }
 
-    struct AddLiquidityParams {
-        uint256 amount0Desired;
-        uint256 amount1Desired;
-        uint256 amount0Min;
-        uint256 amount1Min;
-        address to;
-        uint256 deadline;
-    }
-
     constructor(
         address poolSwapTest,
         address token,
@@ -67,7 +58,7 @@ contract Action {
         uint256 id,
         bool decision,
         bytes calldata response
-    ) public onlyAgent {
+    ) public onlyAgent payable {
         if (decision) {
             POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
         }

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { createPublicClient, createWalletClient, http, parseAbi, zeroAddress } from 'viem';
+import { createPublicClient, createWalletClient, http, parseAbi, zeroAddress, toBytes, toHex } from 'viem';
 import { sepolia } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
@@ -19,11 +19,59 @@ const HookAbi = parseAbi([
 	// Adjust PoolId representation to match actual contract definition
 	"event PromptSent(bytes32 indexed poolId, uint256 indexed id, address indexed user, bytes prompt)"
 ]);
-
-const ActionAbi = parseAbi([
-	// Adjust IPoolManager.SwapParams and PoolId representations as needed
-	"function performAction((address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin, uint160 sqrtPriceLimitX96) params, (bytes32) poolId, uint256 id, bool decision, bytes response) external"
-]);
+// const ActionAbi = parseAbi([
+// 	" performAction((bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96), bytes32 poolId, uint256 id, bool decision, bytes response)"
+// ])
+// Action contract ABI with the correct struct representation:
+const ActionAbi = [{
+	"inputs": [
+		{
+			"internalType": "struct IPoolManager.SwapParams",
+			"name": "params",
+			"type": "tuple",
+			"components": [
+				{
+					"internalType": "bool",
+					"name": "zeroForOne",
+					"type": "bool"
+				},
+				{
+					"internalType": "int256",
+					"name": "amountSpecified",
+					"type": "int256"
+				},
+				{
+					"internalType": "uint160",
+					"name": "sqrtPriceLimitX96",
+					"type": "uint160"
+				}
+			]
+		},
+		{
+			"internalType": "PoolId",
+			"name": "poolId",
+			"type": "bytes32"
+		},
+		{
+			"internalType": "uint256",
+			"name": "id",
+			"type": "uint256"
+		},
+		{
+			"internalType": "bool",
+			"name": "decision",
+			"type": "bool"
+		},
+		{
+			"internalType": "bytes",
+			"name": "response",
+			"type": "bytes"
+		}
+	],
+	"stateMutability": "nonpayable",
+	"type": "function",
+	"name": "performAction"
+}]
 
 // publicClient for contract events listening
 export const publicClient = createPublicClient({
@@ -74,22 +122,22 @@ const watch = publicClient.watchContractEvent({
 			console.log(`prompt: ${prompt}`);
 
 			// Construct the params for performAction
-			const params = {
-				tokenIn: '0xd02119a87AD7BA20F82DDD35CF8452F77A798eF5',       // Example placeholder
-				tokenOut: zeroAddress,     // Example placeholder
-				amountIn: 1000n,                   // Example placeholder
-				amountOutMin: 900n,                // Example placeholder
-				sqrtPriceLimitX96: MIN_SQRT_PRICE+1              // Example placeholder
+			const swapParams = {
+				zeroForOne: true,             // example: true means token0 -> token1
+				amountSpecified: -1000,      // for example, -1000 means exactIn of 1000 units
+				sqrtPriceLimitX96: MIN_SQRT_PRICE - 1        // if you have a specific price limit, set it here
 			};
 
 			const decision = false;    // Example placeholder
-			const response = 'mock response';    // Example placeholder
+			const response = toHex(toBytes('mock response'));    // Example placeholder
 
 			// Call the stand-alone function to submit the transaction
-			await performActionOnChain(params, poolId, id, decision, response);
+			await performActionOnChain(swapParams, poolId, id, decision, response);
 		}
 	},
 });
+
+
 
 console.log('Listening for PromptSent events...');
 
