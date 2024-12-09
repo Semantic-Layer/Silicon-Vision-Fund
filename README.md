@@ -50,6 +50,21 @@ make deployHook
 make deployFactory hook=<DEPLOYED_HOOK_ADDRESS>
 ```
 
+### Run mock scripts
+The mock script watches prompt sending onchain and triggers `Action.performAction()` frunction
+- go to `scripts` folder
+  ```bash
+  cd scripts
+  ```
+- create an `.env` file
+  ```bash
+  cp .env.example .env
+  ```
+- run script
+  ```bash
+  pnpm start
+  ```
+
 ## Smart Contract Implementation
 
 ### Overview
@@ -78,7 +93,6 @@ This contract manages the interaction between users and the AI agent, primarily 
 
 We implemented the `afterAddLiquidity` Hook and the `addLiquidity` function.
 
-- Verifies the caller is the hook contract itself.
 - Checks that the user provides at least `X` ETH worth of liquidity tokens.
 - Ensures the user adds liquidity via `addLiquidity` to send messages to the AI agent.
 - Upon adding liquidity:
