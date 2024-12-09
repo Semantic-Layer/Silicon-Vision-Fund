@@ -161,9 +161,6 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
             prompt
         );
 
-        
-        
-
         // check nft balance
         uint256 afterNFTbalanace = hook.balanceOf(address(this));
 
