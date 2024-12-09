@@ -17,7 +17,7 @@ const account = privateKeyToAccount(PRIVATE_KEY);
 // load contracts
 const HookAbi = parseAbi([
 	// Adjust PoolId representation to match actual contract definition
-	"event PromptSent((bytes32) indexed poolId, uint256 indexed id, address indexed user, bytes prompt)"
+	"event PromptSent(bytes32 indexed poolId, uint256 indexed id, address indexed user, bytes prompt)"
 ]);
 
 const ActionAbi = parseAbi([
