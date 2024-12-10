@@ -221,6 +221,7 @@ contract VisionHookTest is Test, Fixtures, ERC721TokenReceiver {
         //         amountSpecified: -0.002 ether, // Exact input for output swap
         //         sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
         //     }),
+        // // to get tokens, the takeClaims  should be set to false
         //     PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}),
         //     ""
         // );
