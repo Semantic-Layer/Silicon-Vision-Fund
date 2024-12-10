@@ -170,7 +170,7 @@ contract Factory is ERC721TokenReceiver {
     }
 
     ///@dev return all pools
-    function AllPools() public view returns (PoolId[] memory) {
+    function allPools() public view returns (PoolId[] memory) {
         return pools;
     }
 

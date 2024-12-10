@@ -20,10 +20,11 @@ contract Action {
     // todo temperory solution: store prompt msg directly here. we can use offchain event indexing to get user msg instead.
     mapping(uint256 id => Response response) public responses;
 
-    event PromptSent(PoolId indexed poolId, uint256 indexed id, address indexed user, int256 liquidity, bytes prompt);
     event Respond(PoolId indexed poolId, uint256 indexed id, bool decision, bytes response);
 
     error OnlyAgent();
+    error Responded();
+    error EmptyResponse();
 
     modifier onlyAgent() {
         if (msg.sender != AI_AGENT) {
@@ -32,18 +33,16 @@ contract Action {
         _;
     }
 
+    modifier NotResponded(uint256 id) {
+        if (responses[id].response.length != 0) {
+            revert Responded();
+        }
+        _;
+    }
+
     struct Response {
         bool decision;
         bytes response;
-    }
-
-    struct AddLiquidityParams {
-        uint256 amount0Desired;
-        uint256 amount1Desired;
-        uint256 amount0Min;
-        uint256 amount1Min;
-        address to;
-        uint256 deadline;
     }
 
     constructor(
@@ -68,10 +67,12 @@ contract Action {
         uint256 id,
         bool decision,
         bytes calldata response
-    ) public onlyAgent {
+    ) public payable onlyAgent {
         if (decision) {
             POOL_SWAP.swap(POOL_KEY, params, PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false}), "");
         }
+
+        if (response.length == 0) revert EmptyResponse();
 
         responses[id] = Response({decision: decision, response: response});
         emit Respond(poolId, id, decision, response);

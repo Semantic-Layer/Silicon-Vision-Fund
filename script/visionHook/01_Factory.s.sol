@@ -45,7 +45,7 @@ contract FactoryScript is Shared {
         int24 tickMax = TickMath.maxUsableTick(60);
         uint256 MAX_DEADLINE = 12329839823;
         uint256 amount0 = 0.01 ether;
-        VisionHook(visionHook).AddLiquidity{value: amount0}(
+        VisionHook(visionHook).addLiquidity{value: amount0}(
             poolKey,
             VisionHook.AddLiquidityParams({
                 tickLower: tickB + 1, // add 1 to fit the tick spacing
